@@ -275,6 +275,56 @@ class ApiService {
   async resetDemoData(): Promise<void> {
     await fetch(`${this.baseUrl}/reset-data`, { method: 'POST' });
   }
+
+  /**
+   * Optimize multi-stop collection route using Google OR-Tools CVRP
+   */
+  async optimizeRoute(payload: RouteOptimizationRequest): Promise<RouteOptimizationResponse> {
+    const res = await fetch(`${this.baseUrl}/routes/optimize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      let message = `Route optimization failed (${res.status})`;
+      try {
+        const errorData = await res.json();
+        if (errorData?.detail) {
+          message = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
+        }
+      } catch {
+        // Use default message
+      }
+      throw new Error(message);
+    }
+    return await res.json();
+  }
+}
+
+export interface RouteOptimizationRequest {
+  depot?: { lat: number; lng: number };
+  depot_lat?: number;
+  depot_lng?: number;
+  generator_ids: string[];
+  facility_id: string;
+  vehicle_capacity_tons?: number;
+}
+
+export interface RouteOptimizationResponse {
+  status: string;
+  ordered_route: Array<{
+    step: string;
+    id?: string;
+    name: string;
+    demand_tons?: number;
+    lat?: number;
+    lng?: number;
+  }>;
+  total_distance_km: number;
+  total_transport_emissions_tCO2e: number;
+  facility?: BackendFacility;
+  depot?: { lat: number; lng: number };
 }
 
 export const apiService = new ApiService();
+

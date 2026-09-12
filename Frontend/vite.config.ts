@@ -28,6 +28,14 @@ export default defineConfig({
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
+      '/routes': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/reset-data': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
     },
   },
 });

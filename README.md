@@ -27,8 +27,8 @@ environmental benefit, even if it requires a longer transport distance.
                                                       +------------+------------+
                                                       |                         |
                                                       v                         v
-                                             [ OR-Tools CVRP ]        [ PostGIS Database ]
-                                             (Route Optimizer)       (Spatial & Claims)
+                                             [ OR-Tools CVRP ]        [ In-Memory Ledger ]
+                                             (Route Optimizer)       (Idempotent Claims)
                                                       |                         |
                                                       +------------+------------+
                                                                    |
@@ -83,36 +83,38 @@ Frontend:
 Backend:
   - API Framework: Python 3.11+, FastAPI, Uvicorn
   - Optimization Engine: Google OR-Tools (Capacitated Vehicle Routing Problem)
-  - Database: PostgreSQL with PostGIS extensions
-  - ORM & Validation: Pydantic v2, SQLAlchemy
+  - Data Store: High-performance in-memory registry with idempotent UUID deduplication
+  - Validation & Models: Pydantic v2
 
 --------------------------------------------------------------------------------
 6. SETUP & INSTALLATION
 --------------------------------------------------------------------------------
-FRONTEND SETUP:
-  cd frontend
+BACKEND SETUP (Run from repository root):
+  python -m venv venv
+  venv\Scripts\activate          # On Linux/macOS: source venv/bin/activate
+  pip install -r requirements.txt
+  uvicorn main:app --reload --port 8000
+
+  *Note: Backend server runs at http://127.0.0.1:8000. Interactive Swagger docs
+  are available at http://127.0.0.1:8000/docs.
+
+FRONTEND SETUP (Run from Frontend/ directory):
+  cd Frontend
   npm install
-  cp .env.example .env.local
   npm run dev
 
-  *Note: If connecting to an ngrok tunnel during development, ensure request 
-  headers include {"ngrok-skip-browser-warning": "69420"}.
-
-BACKEND SETUP:
-  cd backend
-  python -m venv venv
-  source venv/bin/activate    # Windows: venv\Scripts\activate
-  pip install -r requirements.txt
-  alembic upgrade head
-  uvicorn app.main:app --reload --port 8000
+  *Note: Vite dev server runs at http://localhost:3000 with automatic proxy
+  rules forwarding /shipments, /facilities, /generators, /carbon, /routes,
+  /reset-data, and /health requests to http://127.0.0.1:8000.
 
 --------------------------------------------------------------------------------
 7. FRAUD PREVENTION & CLAIM INTEGRITY
 --------------------------------------------------------------------------------
 1. Client-Generated UUIDs: Idempotent keys prevent duplicate submissions 
    during network retries.
-2. Database-Level Constraints: A unique shipment ID can be linked to at 
-   most one finalized processing batch.
+2. Idempotent In-Memory Registry: A unique shipment ID (UUID) is enforced as 
+   an immutable key in the SHIPMENTS dictionary, preventing duplicate processing 
+   or multi-batch double-claiming.
 3. Weight Discrepancy Auditing: Automatic flagging occurs if destination 
    intake weights deviate from collection origin logs.
 4. Version-Locked Certificates: Generated certificates link directly to fixed 
