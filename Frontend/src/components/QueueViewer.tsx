@@ -44,7 +44,8 @@ export const QueueViewer: React.FC = () => {
             id="manual-sync-queue-btn"
             onClick={() => syncQueue()}
             disabled={queueCount === 0 || isSyncing || !isOnline}
-            className="btn-action btn-action-sync"
+            className="btn-action btn-action-sync focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none"
+            aria-label="Process and sync all offline queued shipments now"
             title={!isOnline ? 'Cannot sync while offline' : 'Process all queued shipments now'}
           >
             <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
@@ -55,7 +56,8 @@ export const QueueViewer: React.FC = () => {
             type="button"
             onClick={() => clearQueue()}
             disabled={queueCount === 0 || isSyncing}
-            className="btn-action btn-action-clear"
+            className="btn-action btn-action-clear focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:outline-none"
+            aria-label="Clear all offline queued shipments"
             title="Clear all stored items"
           >
             <Trash2 size={14} />
@@ -139,7 +141,8 @@ export const QueueViewer: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => removeShipment(item.shipment_id)}
-                  className="btn-delete-item"
+                  className="btn-delete-item focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:outline-none"
+                  aria-label={`Remove shipment ${item.shipment_id} from offline queue`}
                   title="Remove from local queue"
                 >
                   <Trash2 size={12} /> Remove

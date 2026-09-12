@@ -9,6 +9,7 @@ import {
   Leaf,
   Navigation,
   Zap,
+  Key,
 } from 'lucide-react';
 import { apiService, FacilityMatchResponse } from '../services/apiService';
 
@@ -286,19 +287,23 @@ export const GisRouteViewer: React.FC = () => {
       : SAMPLE_ROUTES;
 
   return (
-    <div className="gis-viewer-container space-y-4">
+    <div className="gis-viewer-container space-y-6">
       {/* Test Case Quick Bar */}
-      <div className="card p-4 bg-slate-900/90 border border-slate-700/80 rounded-2xl shadow-xl">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 shadow-xl backdrop-blur-xl">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <span className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
                 <Leaf size={18} />
               </span>
-              <h3 className="font-bold text-base text-white">GIS Route & Facility Visualizer</h3>
+              <h3 className="font-bold text-base text-[var(--text-primary)]">GIS Route & Facility Visualizer</h3>
               <span className="version-pill">Leaflet + FastAPI GIS</span>
+              <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 shadow-sm">
+                <Key size={12} />
+                <span>GIS API: Authenticated</span>
+              </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-[var(--text-secondary)] mt-1">
               Visualizes waste discovery, multi-stop CVRP collection routes, and live carbon-aware facility assignment.
             </p>
           </div>
@@ -399,39 +404,39 @@ export const GisRouteViewer: React.FC = () => {
       />
 
       {/* Interactive Verification Checklist Box */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
-        <div className="p-3 rounded-xl bg-slate-900/70 border border-slate-800">
-          <div className="font-semibold text-emerald-300 flex items-center gap-1.5 mb-1">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+        <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm">
+          <div className="font-semibold text-emerald-500 dark:text-emerald-400 flex items-center gap-1.5 mb-1">
             <CheckCircle2 size={14} /> Live Backend Integration
           </div>
-          <p className="text-slate-400">
+          <p className="text-[var(--text-secondary)]">
             Dynamically computes emissions via <code>/facilities/match</code> factoring distance (0.0009 tCO₂e/km/t) and technology processing factors.
           </p>
         </div>
 
-        <div className="p-3 rounded-xl bg-slate-900/70 border border-slate-800">
-          <div className="font-semibold text-emerald-300 flex items-center gap-1.5 mb-1">
+        <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm">
+          <div className="font-semibold text-emerald-500 dark:text-emerald-400 flex items-center gap-1.5 mb-1">
             <CheckCircle2 size={14} /> Generator Markers
           </div>
-          <p className="text-slate-400">
+          <p className="text-[var(--text-secondary)]">
             Pulsing icons indicating tonnage, waste type, and contamination percentage across Gandhinagar & Ahmedabad.
           </p>
         </div>
 
-        <div className="p-3 rounded-xl bg-slate-900/70 border border-slate-800">
-          <div className="font-semibold text-blue-300 flex items-center gap-1.5 mb-1">
+        <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm">
+          <div className="font-semibold text-blue-500 dark:text-blue-400 flex items-center gap-1.5 mb-1">
             <CheckCircle2 size={14} /> Facility Specifications
           </div>
-          <p className="text-slate-400">
+          <p className="text-[var(--text-secondary)]">
             Displays processing capacity (Pyrolysis, AD Biogas, Aerobic Composting) and emission intensity.
           </p>
         </div>
 
-        <div className="p-3 rounded-xl bg-slate-900/70 border border-slate-800">
-          <div className="font-semibold text-cyan-300 flex items-center gap-1.5 mb-1">
+        <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm">
+          <div className="font-semibold text-cyan-500 dark:text-cyan-400 flex items-center gap-1.5 mb-1">
             <CheckCircle2 size={14} /> Carbon-Aware Polyline
           </div>
-          <p className="text-slate-400">
+          <p className="text-[var(--text-secondary)]">
             Renders optimal direct connection path with live emissions calculation on the Leaflet canvas.
           </p>
         </div>

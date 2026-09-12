@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   ResponsiveContainer,
   RadarChart,
@@ -187,7 +187,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ icon: Icon, label, value, subte
     </div>
     <div className="cs-metric-body">
       <p className="cs-metric-label">{label}</p>
-      <p className="cs-metric-value" style={{ color: highlight ? accentColor : '#e2e8f0' }}>{value}</p>
+      <p className="cs-metric-value" style={{ color: highlight ? accentColor : 'var(--text-primary)' }}>{value}</p>
       <p className="cs-metric-sub">{subtext}</p>
     </div>
   </div>

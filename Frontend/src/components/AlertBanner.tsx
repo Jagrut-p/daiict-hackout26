@@ -49,7 +49,7 @@ export const AlertBanner: React.FC = () => {
           <button
             type="button"
             onClick={() => dismissAlert(alert.id)}
-            className="toast-close"
+            className="toast-close focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
             aria-label="Close notification"
           >
             <X size={16} />

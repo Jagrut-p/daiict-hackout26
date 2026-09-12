@@ -30,11 +30,12 @@ export const ShipmentAuditLog: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400">{logs.length} events</span>
+          <span className="text-xs text-[var(--text-muted)]">{logs.length} events</span>
           <button
             type="button"
             onClick={handleClear}
-            className="btn-clear-log"
+            className="btn-clear-log focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
+            aria-label="Clear telemetry logs"
             title="Clear telemetry logs"
           >
             <Trash2 size={12} />

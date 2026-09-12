@@ -32,13 +32,13 @@ interface FormAlertState {
 }
 
 const WASTE_TYPE_OPTIONS: { value: WasteType; label: string; icon: string; category: string }[] = [
-  { value: 'Organic', label: 'Organic / Bio-degradable', icon: '🌱', category: 'Compostable' },
-  { value: 'Recyclable', label: 'Recyclables (Plastic, Metal, Glass)', icon: '♻️', category: 'Recycling' },
-  { value: 'Hazardous', label: 'Hazardous Chemical / Toxic', icon: '☣️', category: 'Specialized' },
+  { value: 'Recyclable', label: 'Recyclables (Dry / Metals)', icon: '♻️', category: 'Recycling' },
+  { value: 'Organic', label: 'Organic (Compost / Food)', icon: '🌱', category: 'Compostable' },
+  { value: 'Hazardous', label: 'Hazardous (Toxic / Chemical)', icon: '☣️', category: 'Specialized' },
   { value: 'E-Waste', label: 'Electronic Waste (E-Waste)', icon: '🔌', category: 'High Value' },
-  { value: 'Industrial', label: 'Industrial Scrap / Byproducts', icon: '🏭', category: 'Heavy Duty' },
-  { value: 'Medical', label: 'Biomedical / Clinical', icon: '💉', category: 'Regulated' },
-  { value: 'Construction', label: 'Construction & Demolition', icon: '🧱', category: 'Bulk' },
+  { value: 'Industrial', label: 'Industrial Scrap (Bulk)', icon: '🏭', category: 'Heavy Duty' },
+  { value: 'Medical', label: 'Biomedical (Clinical)', icon: '💉', category: 'Regulated' },
+  { value: 'Construction', label: 'Construction & Debris', icon: '🧱', category: 'Bulk' },
 ];
 
 export const WasteCollectionForm: React.FC = () => {
@@ -280,72 +280,103 @@ export const WasteCollectionForm: React.FC = () => {
   );
 
   return (
-    <div className="card form-container">
-      {/* Form Header */}
-      <div className="form-header">
-        <div className="form-title-group">
-          <div className="form-icon-badge">
-            <Sparkles size={22} className="text-emerald-400" />
+    <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-xl backdrop-blur-xl relative overflow-hidden transition-all duration-300">
+      {/* Decorative ambient background blur */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Form Header: Stacked on mobile, row on tablet/desktop */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 sm:pb-6 border-b border-[var(--border-color)]">
+        <div className="flex items-start sm:items-center gap-3.5 sm:gap-4">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 border border-emerald-500/25 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/10">
+            <Sparkles size={24} />
           </div>
           <div>
-            <h2 className="form-title">Waste Collection Manifest</h2>
-            <p className="form-subtitle">
-              Offline-capable data entry with automatic synchronization & local IndexedDB queuing
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tracking-tight">
+              Waste Collection Manifest
+            </h2>
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-0.5 leading-relaxed">
+              Field-ready offline data entry with automated synchronization &amp; local IndexedDB queuing
             </p>
           </div>
         </div>
 
         {/* Network Status Badge */}
-        <div className={`status-pill ${isOnline ? 'status-pill-online' : 'status-pill-offline'}`}>
-          <span className="status-dot"></span>
-          <span>{isOnline ? 'Online (Direct Sync)' : 'Offline (Local Queue)'}</span>
+        <div
+          role="status"
+          aria-label={isOnline ? 'Online mode: Direct synchronization active' : 'Offline mode: Buffered to local queue'}
+          className={`flex items-center gap-2.5 px-3.5 py-2 rounded-full border text-xs font-semibold self-start sm:self-auto shrink-0 transition-all ${
+            isOnline
+              ? 'bg-teal-500/10 border-teal-500/25 text-teal-600 dark:text-teal-300'
+              : 'bg-amber-500/10 border-amber-500/25 text-amber-600 dark:text-amber-300'
+          }`}
+        >
+          <span className="relative flex h-2 w-2">
+            <span
+              className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                isOnline ? 'bg-teal-400' : 'bg-amber-400'
+              }`}
+            />
+            <span
+              className={`relative inline-flex rounded-full h-2 w-2 ${
+                isOnline ? 'bg-teal-500' : 'bg-amber-500'
+              }`}
+            />
+          </span>
+          <span className="font-mono">{isOnline ? 'Online (Direct Sync)' : 'Offline (Local Queue)'}</span>
         </div>
       </div>
 
-      {/* Preset Quick Fill Controls for Testing */}
-      <div className="preset-bar">
-        <span className="preset-label">Quick Test Presets:</span>
-        <button
-          type="button"
-          onClick={() => prefillSample('normal')}
-          className="preset-btn"
-          title="Fill standard recyclable batch"
-        >
-          ♻️ Recyclables (Standard)
-        </button>
-        <button
-          type="button"
-          onClick={() => prefillSample('hazardous')}
-          className="preset-btn"
-          title="Fill hazardous material batch"
-        >
-          ☣️ Hazardous Batch
-        </button>
-        <button
-          type="button"
-          onClick={() => prefillSample('conflict_test')}
-          className="preset-btn preset-btn-warning"
-          title="Prefill a duplicate claim test fixture"
-        >
-          ⚠️ Conflict Test Fixture
-        </button>
+      {/* Preset Quick Fill Controls: Touch-friendly horizontal scroll / wrapping pills */}
+      <div className="py-4 border-b border-[var(--border-color)]">
+        <div className="flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+          <span>Quick Field Test Presets</span>
+        </div>
+        <div className="flex flex-wrap gap-2 sm:gap-2.5">
+          <button
+            type="button"
+            onClick={() => prefillSample('normal')}
+            className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] active:scale-95 transition-all flex items-center gap-1.5 touch-manipulation shadow-sm"
+            title="Fill standard recyclable batch"
+          >
+            <span>♻️</span>
+            <span>Recyclables (Standard)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => prefillSample('hazardous')}
+            className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] active:scale-95 transition-all flex items-center gap-1.5 touch-manipulation shadow-sm"
+            title="Fill hazardous material batch"
+          >
+            <span>☣️</span>
+            <span>Hazardous Batch</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => prefillSample('conflict_test')}
+            className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/30 active:scale-95 transition-all flex items-center gap-1.5 touch-manipulation shadow-sm"
+            title="Prefill a duplicate claim test fixture"
+          >
+            <span>⚠️</span>
+            <span>Conflict Test Fixture</span>
+          </button>
+        </div>
       </div>
 
       {/* Primary Form */}
-      <form onSubmit={handleSubmit} className="form-body">
-        <div className="form-grid">
+      <form onSubmit={handleSubmit} className="pt-5 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {/* Field 1: Generator ID */}
-          <div className="input-group">
-            <label htmlFor="generatorId" className="input-label">
-              <Building2 size={16} className="label-icon" />
-              Generator Identifier (Facility / Origin ID)
-              <span className="required-star">*</span>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="generatorId" className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[var(--text-secondary)]">
+              <Building2 size={16} className="text-indigo-400 shrink-0" />
+              <span>Generator Identifier (Facility / Origin ID)</span>
+              <span className="text-rose-500 font-bold">*</span>
             </label>
             <input
               id="generatorId"
               type="text"
               list="registeredGeneratorsList"
-              className="input-control font-mono"
+              className="w-full min-h-[48px] sm:min-h-[52px] px-4 py-3 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl sm:rounded-2xl text-[var(--text-primary)] text-base sm:text-sm font-mono placeholder:text-[var(--text-muted)] focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-all shadow-sm"
               placeholder="e.g., GEN-GJ-01 or GEN-TX-4091"
               value={formData.generatorId}
               onChange={(e) => {
@@ -372,74 +403,87 @@ export const WasteCollectionForm: React.FC = () => {
                 ))}
               </datalist>
             )}
-            <span className="input-hint">Unique identifier for the waste producer or select registered facility</span>
+            <span className="text-[11px] sm:text-xs text-[var(--text-muted)]">
+              Unique identifier for the waste producer or select registered facility
+            </span>
           </div>
 
           {/* Field 2: Waste Type (Dropdown) */}
-          <div className="input-group">
-            <label htmlFor="wasteType" className="input-label">
-              <Trash2 size={16} className="label-icon" />
-              Waste Classification Type
-              <span className="required-star">*</span>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="wasteType" className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[var(--text-secondary)]">
+              <Trash2 size={16} className="text-indigo-400 shrink-0" />
+              <span>Waste Classification Type</span>
+              <span className="text-rose-500 font-bold">*</span>
             </label>
-            <div className="select-wrapper">
+            <div className="relative">
               <select
                 id="wasteType"
-                className="select-control"
+                className="w-full min-h-[48px] sm:min-h-[52px] px-4 py-3 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl sm:rounded-2xl text-[var(--text-primary)] text-base sm:text-sm cursor-pointer appearance-none pr-10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-all shadow-sm"
                 value={formData.wasteType}
                 onChange={(e) => handleChange('wasteType', e.target.value as WasteType)}
                 required
               >
                 {WASTE_TYPE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
+                  <option key={opt.value} value={opt.value} className="bg-[var(--bg-surface)] text-[var(--text-primary)] py-2">
                     {opt.icon} {opt.label}
                   </option>
                 ))}
               </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[var(--text-muted)]">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
-            <span className="input-hint">Select appropriate material safety and handling classification</span>
+            <span className="text-[11px] sm:text-xs text-[var(--text-muted)]">
+              Select appropriate material safety and handling classification
+            </span>
           </div>
 
           {/* Field 3: Weight (kg) */}
-          <div className="input-group">
-            <label htmlFor="weightKg" className="input-label">
-              <Scale size={16} className="label-icon" />
-              Measured Net Weight (kg)
-              <span className="required-star">*</span>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="weightKg" className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[var(--text-secondary)]">
+              <Scale size={16} className="text-indigo-400 shrink-0" />
+              <span>Measured Net Weight (kg)</span>
+              <span className="text-rose-500 font-bold">*</span>
             </label>
-            <div className="input-addon-wrapper">
+            <div className="relative flex items-center">
               <input
                 id="weightKg"
                 type="number"
                 step="0.01"
                 min="0.01"
                 max="50000"
-                className="input-control"
+                className="w-full min-h-[48px] sm:min-h-[52px] pl-4 pr-14 py-3 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl sm:rounded-2xl text-[var(--text-primary)] text-base sm:text-sm font-mono placeholder:text-[var(--text-muted)] focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-all shadow-sm"
                 placeholder="0.00"
                 value={formData.weightKg}
                 onChange={(e) => handleChange('weightKg', e.target.value ? parseFloat(e.target.value) : '')}
                 required
               />
-              <span className="input-addon">kg</span>
+              <span className="absolute right-4 text-xs font-mono font-bold text-[var(--text-muted)] bg-[var(--bg-card-subtle)] px-2.5 py-1 rounded-md border border-[var(--border-color)]">
+                kg
+              </span>
             </div>
-            <span className="input-hint">Calibrated scale reading in kilograms</span>
+            <span className="text-[11px] sm:text-xs text-[var(--text-muted)]">
+              Calibrated scale reading in kilograms
+            </span>
           </div>
 
           {/* Field 4: Contamination Level (%) */}
-          <div className="input-group">
-            <label htmlFor="contaminationLevel" className="input-label">
-              <Flame size={16} className="label-icon" />
-              Contamination Level (0 - 100%)
-              <span className="required-star">*</span>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="contaminationLevel" className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[var(--text-secondary)]">
+              <Flame size={16} className="text-indigo-400 shrink-0" />
+              <span>Contamination Level (0 - 100%)</span>
+              <span className="text-rose-500 font-bold">*</span>
             </label>
-            <div className="input-addon-wrapper">
+            <div className="relative flex items-center">
               <input
                 id="contaminationLevel"
                 type="number"
                 step="0.1"
                 min="0"
                 max="100"
-                className="input-control"
+                className="w-full min-h-[48px] sm:min-h-[52px] pl-4 pr-12 py-3 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl sm:rounded-2xl text-[var(--text-primary)] text-base sm:text-sm font-mono placeholder:text-[var(--text-muted)] focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-all shadow-sm"
                 placeholder="0.0"
                 value={formData.contaminationLevel}
                 onChange={(e) =>
@@ -447,22 +491,24 @@ export const WasteCollectionForm: React.FC = () => {
                 }
                 required
               />
-              <span className="input-addon">%</span>
+              <span className="absolute right-4 text-xs font-mono font-bold text-[var(--text-muted)] bg-[var(--bg-card-subtle)] px-2 py-1 rounded-md border border-[var(--border-color)]">
+                %
+              </span>
             </div>
             {/* Visual Contamination Meter */}
-            <div className="contamination-meter-track">
+            <div className="w-full h-2 rounded-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] overflow-hidden mt-1">
               <div
-                className={`contamination-meter-bar ${
+                className={`h-full rounded-full transition-all duration-300 ${
                   Number(formData.contaminationLevel) > 25
-                    ? 'meter-high'
+                    ? 'bg-rose-500'
                     : Number(formData.contaminationLevel) > 10
-                    ? 'meter-medium'
-                    : 'meter-low'
+                    ? 'bg-amber-400'
+                    : 'bg-emerald-400'
                 }`}
                 style={{
                   width: `${Math.min(100, Math.max(0, Number(formData.contaminationLevel) || 0))}%`,
                 }}
-              ></div>
+              />
             </div>
           </div>
         </div>
@@ -471,58 +517,74 @@ export const WasteCollectionForm: React.FC = () => {
         {currentAlert && (
           <div
             id="form-feedback-alert"
-            className={`alert-box alert-${currentAlert.type} animate-slide-in`}
+            className={`p-4 sm:p-5 rounded-2xl border flex items-start gap-3.5 transition-all shadow-lg animate-fade-in ${
+              currentAlert.type === 'offline_queued'
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-200'
+                : currentAlert.type === 'success'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-200'
+                : currentAlert.type === 'conflict'
+                ? 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-200'
+                : currentAlert.type === 'error'
+                ? 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-200'
+                : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-600 dark:text-cyan-200'
+            }`}
             role="alert"
           >
-            <div className="alert-icon-wrapper">
-              {currentAlert.type === 'offline_queued' && <WifiOff className="alert-icon text-amber-400" size={24} />}
-              {currentAlert.type === 'success' && <CheckCircle2 className="alert-icon text-emerald-400" size={24} />}
-              {currentAlert.type === 'conflict' && <AlertCircle className="alert-icon text-rose-500" size={24} />}
-              {currentAlert.type === 'error' && <AlertTriangle className="alert-icon text-red-400" size={24} />}
-              {currentAlert.type === 'info' && <Info className="alert-icon text-cyan-400" size={24} />}
+            <div className="shrink-0 mt-0.5">
+              {currentAlert.type === 'offline_queued' && <WifiOff className="text-amber-500" size={24} />}
+              {currentAlert.type === 'success' && <CheckCircle2 className="text-emerald-500" size={24} />}
+              {currentAlert.type === 'conflict' && <AlertCircle className="text-rose-500" size={24} />}
+              {currentAlert.type === 'error' && <AlertTriangle className="text-red-500" size={24} />}
+              {currentAlert.type === 'info' && <Info className="text-cyan-500" size={24} />}
             </div>
 
-            <div className="alert-content">
-              <div className="alert-title-row">
-                <span className="alert-badge">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                <span className="text-xs font-mono font-bold tracking-wider uppercase">
                   {currentAlert.type === 'offline_queued' && 'TEST CASE 1: OFFLINE QUEUED'}
                   {currentAlert.type === 'success' && 'TEST CASE 3: SYNC SUCCESS'}
                   {currentAlert.type === 'conflict' && 'TEST CASE 4: 409 CONFLICT DETECTED'}
                   {currentAlert.type === 'error' && 'TRANSMISSION ERROR'}
                   {currentAlert.type === 'info' && 'STATUS UPDATE'}
                 </span>
-                <span className="alert-time">{currentAlert.timestamp}</span>
+                <span className="text-[11px] font-mono text-[var(--text-muted)]">{currentAlert.timestamp}</span>
               </div>
 
-              {/* Exact user requirement string for Test Case 1: "Saved locally. Waiting for connection." */}
-              <p className="alert-main-text">{currentAlert.message}</p>
+              {/* Exact requirement string for Test Case 1: "Saved locally. Waiting for connection." */}
+              <p className="text-sm font-semibold leading-snug">{currentAlert.message}</p>
 
               {currentAlert.shipmentId && (
-                <div className="alert-shipment-id">
+                <div className="mt-2 text-xs font-mono flex items-center gap-1.5 opacity-90">
                   <span>Shipment UUIDv4:</span>
-                  <code className="font-mono">{currentAlert.shipmentId}</code>
+                  <code className="px-1.5 py-0.5 rounded bg-[var(--bg-card-subtle)] border border-[var(--border-color)]">
+                    {currentAlert.shipmentId}
+                  </code>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Form Action Controls */}
-        <div className="form-actions">
+        {/* Form Action Controls: Stacked & Thumb-reachable on mobile, inline on sm+ */}
+        <div className="pt-4 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3">
           <button
             type="button"
             onClick={resetForm}
-            className="btn btn-secondary"
+            className="w-full sm:w-auto min-h-[48px] sm:min-h-[52px] px-6 py-3 rounded-xl sm:rounded-2xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm"
             disabled={isSubmitting}
           >
             <RefreshCw size={16} />
-            Reset Form
+            <span>Reset Form</span>
           </button>
 
           <button
             type="submit"
             id="submit-waste-manifest-btn"
-            className={`btn btn-primary ${!isOnline ? 'btn-offline' : ''}`}
+            className={`w-full sm:w-auto min-h-[52px] px-8 py-3 rounded-xl sm:rounded-2xl font-bold text-base sm:text-sm flex items-center justify-center gap-2.5 active:scale-95 transition-all shadow-lg text-white ${
+              !isOnline
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-amber-500/20 hover:brightness-110'
+                : 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 shadow-emerald-500/20 hover:brightness-110'
+            }`}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
@@ -547,9 +609,9 @@ export const WasteCollectionForm: React.FC = () => {
 
       {/* UUIDv4 Specification Footer */}
       {lastGeneratedId && (
-        <div className="form-footer-info">
+        <div className="mt-5 pt-3.5 border-t border-[var(--border-color)] text-xs text-[var(--text-muted)] flex flex-wrap items-center gap-2">
           <span>Last generated <code>shipment_id</code> (UUIDv4): </span>
-          <span className="font-mono text-emerald-300">{lastGeneratedId}</span>
+          <span className="font-mono text-emerald-500 dark:text-emerald-300 font-semibold">{lastGeneratedId}</span>
         </div>
       )}
     </div>

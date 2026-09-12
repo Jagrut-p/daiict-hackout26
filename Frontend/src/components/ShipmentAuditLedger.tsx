@@ -246,23 +246,23 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
     switch (status) {
       case 'Verified':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
             Verified
           </span>
         );
       case 'Dispatched':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
             Dispatched
           </span>
         );
       case 'Queued':
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-700/50 text-slate-300 border border-slate-600/50">
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-slate-500/15 text-slate-600 dark:text-slate-300 border border-slate-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
             Queued
           </span>
         );
@@ -303,25 +303,25 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
   return (
     <div className="w-full space-y-6">
       {/* Header & Controls Strip */}
-      <div className="bg-slate-900/60 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500/20 via-sky-500/15 to-violet-500/15 border border-indigo-400/25 flex items-center justify-center text-indigo-300 shadow-md">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-400/25 flex items-center justify-center text-indigo-400 shadow-md">
               <FileSpreadsheet size={24} />
             </div>
             <div>
-              <div className="flex items-center gap-2.5">
-                <h3 className="text-xl font-bold text-white tracking-tight">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h3 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
                   Shipment Audit Ledger
                 </h3>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-400/20">
+                <span className="px-3 py-0.5 rounded-lg text-xs font-mono font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-400/20">
                   {filteredTransactions.length} of {transactions.length} Records
                 </span>
-                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-0.5 rounded-lg text-xs font-mono font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20">
                   <Sparkles size={11} /> Live Backend Connected
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-[var(--text-secondary)] mt-1">
                 Complete historical audit trail of manifest dispatches, routes, and verified carbon offsets.
               </p>
             </div>
@@ -333,7 +333,7 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
               type="button"
               onClick={fetchLiveShipments}
               disabled={isLoadingBackend}
-              className="px-3.5 py-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 text-sky-200 text-xs font-semibold transition-all flex items-center gap-2 border border-sky-400/30 disabled:opacity-50"
+              className="px-3.5 py-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 text-sky-500 dark:text-sky-200 text-xs font-semibold transition-all flex items-center gap-2 border border-sky-400/30 disabled:opacity-50"
               title="Sync with FastAPI backend"
             >
               <RefreshCw size={13} className={isLoadingBackend ? 'animate-spin' : ''} />
@@ -353,7 +353,7 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
             <button
               type="button"
               onClick={handleResetData}
-              className="px-3.5 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.09] text-slate-300 hover:text-white text-xs font-semibold border border-white/[0.08] transition-all flex items-center gap-2"
+              className="px-3.5 py-2 rounded-xl bg-slate-500/[0.08] hover:bg-slate-500/[0.14] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-semibold border border-[var(--border-color)] transition-all flex items-center gap-2"
               title="Reset sample records"
             >
               <RotateCcw size={13} />
@@ -363,7 +363,7 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
             <button
               type="button"
               onClick={handleClearAll}
-              className="px-3.5 py-2 rounded-xl bg-white/[0.03] hover:bg-rose-950/40 hover:text-rose-300 hover:border-rose-800/60 text-slate-400 text-xs font-semibold border border-white/[0.06] transition-all flex items-center gap-2"
+              className="px-3.5 py-2 rounded-xl bg-slate-500/[0.05] hover:bg-rose-500/15 hover:text-rose-500 hover:border-rose-400/30 text-[var(--text-muted)] text-xs font-semibold border border-[var(--border-color)] transition-all flex items-center gap-2"
               title="Clear all rows to test empty state"
             >
               <Trash2 size={13} />
@@ -373,7 +373,7 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
         </div>
 
         {/* Filter Toolbar: Search Bar & Status Tabs */}
-        <div className="mt-4 pt-4 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="mt-5 pt-5 border-t border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
           <div className="relative flex-1 max-w-md">
             <label htmlFor={searchInputId} className="sr-only">
               Search by Shipment UUID or Generator
@@ -384,33 +384,34 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by Shipment UUID (e.g. 123e or f47ac)..."
-              className="w-full bg-slate-950/90 border border-slate-700 rounded-xl px-4 py-2 pl-9 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
+              style={{ paddingLeft: '2.85rem', paddingRight: '4.5rem' }}
+              className="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl py-2.5 text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all shadow-sm"
             />
             <Search
-              size={15}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 hover:text-white px-1.5 py-0.5 rounded bg-slate-800"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] px-2 py-0.5 rounded-md bg-slate-500/15 border border-[var(--border-color)] transition-colors"
               >
                 Clear
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800 text-xs">
+          <div className="flex items-center gap-1 bg-[var(--bg-card-subtle)] p-1 rounded-xl border border-[var(--border-color)] text-xs">
             {(['All', 'Verified', 'Dispatched', 'Queued'] as const).map((status) => (
               <button
                 key={status}
                 type="button"
                 onClick={() => setStatusFilter(status)}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                   statusFilter === status
-                    ? 'bg-slate-800 text-white font-semibold shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-indigo-500/15 text-indigo-500 dark:text-indigo-300 font-semibold shadow-sm border border-indigo-400/25'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 {status}
@@ -421,7 +422,7 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
       </div>
 
       {/* Main Ledger Table Card */}
-      <div className="bg-slate-900/90 border border-slate-700/80 rounded-2xl shadow-xl overflow-hidden backdrop-blur-md">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl shadow-xl overflow-hidden backdrop-blur-md">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>

@@ -336,40 +336,40 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-10">
-      {/* Top Header / Status Strip */}
-      <div className="bg-slate-900/60 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500/20 via-violet-500/15 to-sky-500/15 border border-indigo-400/25 flex items-center justify-center text-indigo-300 shadow-lg shadow-indigo-500/10">
+    <div className="w-full mx-auto space-y-8">
+      {/* Top Header & Fast Action Presets */}
+      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-7 shadow-xl backdrop-blur-xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-400/25 flex items-center justify-center text-indigo-400 shadow-md">
               <Scale size={28} className="animate-pulse" />
             </div>
             <div>
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h2 className="text-xl sm:text-2xl font-black text-[var(--text-primary)] tracking-tight">
                   Facility Intake Terminal
                 </h2>
-                <span className="px-3 py-0.5 rounded-full text-xs font-mono font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-400/25">
+                <span className="px-3 py-1 rounded-lg text-xs font-mono font-semibold bg-indigo-500/15 text-indigo-400 border border-indigo-400/25">
                   Bay 02 Active
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
                 Weigh-Station Operator Inbound Verification & Audit Console
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            <span className="text-xs text-slate-400 font-medium mr-1">Quick Load Manifest:</span>
+            <span className="text-xs text-[var(--text-muted)] font-medium mr-1">Quick Load Manifest:</span>
             {availableManifests.slice(0, 4).map((manifest) => (
               <button
                 key={manifest.shipmentId}
                 type="button"
                 onClick={() => handleSelectPreset(manifest)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all flex items-center gap-1.5 ${
                   activeShipment?.shipmentId === manifest.shipmentId
-                    ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/40 shadow-sm'
-                    : 'bg-white/[0.05] text-slate-300 hover:text-white hover:bg-white/[0.09] border border-white/[0.08]'
+                    ? 'bg-indigo-500/20 text-indigo-400 dark:text-indigo-200 border border-indigo-400/40 shadow-sm'
+                    : 'bg-slate-500/[0.08] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-slate-500/[0.14] border border-[var(--border-color)]'
                 }`}
               >
                 <Truck size={13} />
@@ -381,23 +381,23 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
       </div>
 
       {/* Main Terminal Grid: Inbound Manifest Search & Actual Weight Verification */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-7 lg:gap-8">
         {/* Left Column: Search & Scale Input Form */}
-        <div className="lg:col-span-6 space-y-8">
-          <div className="bg-slate-900/60 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-xl backdrop-blur-xl">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2 mb-5 pb-3 border-b border-white/[0.08]">
-              <Search size={17} className="text-indigo-400" />
+        <div className="xl:col-span-6 space-y-7 min-w-0">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-7 shadow-xl backdrop-blur-xl space-y-6">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2.5 pb-4 border-b border-[var(--border-color)]">
+              <Search size={18} className="text-indigo-400" />
               1. Inbound Manifest Lookup
             </h3>
 
             {/* Shipment UUID Search Bar */}
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               <label
                 htmlFor={searchInputId}
-                className="text-xs font-semibold text-slate-300 flex items-center justify-between"
+                className="text-xs font-semibold text-[var(--text-secondary)] flex items-center justify-between"
               >
                 <span>Shipment UUID / Manifest Barcode</span>
-                <span className="text-[11px] text-slate-500 font-normal">
+                <span className="text-[11px] text-[var(--text-muted)] font-normal">
                   Type UUID or pick quick manifest
                 </span>
               </label>
@@ -409,8 +409,8 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="e.g. SHP-TX-9842 or custom UUID..."
-                  style={{ paddingLeft: '3.1rem', paddingRight: '4rem' }}
-                  className="w-full bg-slate-950/90 border border-slate-700 rounded-xl py-3.5 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
+                  style={{ paddingLeft: '3.25rem', paddingRight: '4.75rem' }}
+                  className="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl py-4 text-sm font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all shadow-sm"
                 />
                 <Search
                   size={18}
@@ -420,7 +420,7 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
                   <button
                     type="button"
                     onClick={() => handleSearch('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white px-2 py-1 rounded-lg bg-slate-800"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] px-2.5 py-1 rounded-lg bg-slate-500/15 border border-[var(--border-color)] transition-colors"
                   >
                     Clear
                   </button>
@@ -430,20 +430,21 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
 
             {/* Operator Quick Simulator Buttons */}
             {activeShipment && (
-              <div className="mt-6 pt-4 border-t border-white/[0.06]">
-                <div className="flex items-center justify-between text-xs text-slate-400 mb-3">
-                  <span className="font-semibold flex items-center gap-1.5">
+              <div className="mt-8 pt-6 border-t border-[var(--border-color)] space-y-3.5">
+                <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+                  <span className="font-semibold flex items-center gap-1.5 text-[var(--text-secondary)]">
                     <Sparkles size={14} className="text-amber-400" />
                     Quick Scale Simulation Triggers:
                   </span>
+                  <span className="text-[11px] font-mono">1-Click Test Presets</span>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   <button
                     type="button"
                     onClick={() => {
                       setActualWeightInput(activeShipment.expectedWeightTons.toFixed(2));
                     }}
-                    className="px-3 py-2 rounded-xl bg-emerald-950/40 border border-emerald-800/50 text-emerald-300 hover:bg-emerald-900/60 text-xs font-mono transition-all text-center"
+                    className="px-3.5 py-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/25 text-xs font-mono font-bold transition-all text-center shadow-sm"
                     title="Exact Match: 0% deviation"
                   >
                     Exact: {activeShipment.expectedWeightTons} T
@@ -456,7 +457,7 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
                       );
                       setActualWeightInput(overweight.toString());
                     }}
-                    className="px-3 py-2 rounded-xl bg-amber-950/40 border border-amber-800/50 text-amber-300 hover:bg-amber-900/60 text-xs font-mono transition-all text-center"
+                    className="px-3.5 py-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-300 hover:bg-amber-500/25 text-xs font-mono font-bold transition-all text-center shadow-sm"
                     title="Test Case 1: +15% Discrepancy"
                   >
                     +15% Deviation
@@ -469,7 +470,7 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
                       );
                       setActualWeightInput(underweight.toString());
                     }}
-                    className="px-3 py-2 rounded-xl bg-amber-950/40 border border-amber-800/50 text-amber-300 hover:bg-amber-900/60 text-xs font-mono transition-all text-center"
+                    className="px-3.5 py-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-300 hover:bg-amber-500/25 text-xs font-mono font-bold transition-all text-center shadow-sm"
                     title="Test Case 1: -18% Discrepancy"
                   >
                     -18% Deviation
@@ -482,25 +483,25 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
           {/* Scale Input Section */}
           <form
             onSubmit={handleVerifyAndFinalize}
-            className="bg-slate-900/60 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6"
+            className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-7 shadow-xl backdrop-blur-xl space-y-6"
           >
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2 pb-3 border-b border-white/[0.08]">
-              <Scale size={17} className="text-emerald-400" />
+            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2.5 pb-4 border-b border-[var(--border-color)]">
+              <Scale size={18} className="text-emerald-400" />
               2. Scale Measurement & Verification
             </h3>
 
             {/* Numeric input for Actual Received Weight (Tons) */}
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               <label
                 htmlFor={weightInputId}
-                className="text-xs font-semibold text-slate-300 flex items-center justify-between"
+                className="text-xs font-semibold text-[var(--text-secondary)] flex items-center justify-between"
               >
                 <span className="flex items-center gap-1.5">
                   <span>Actual Received Weight (Tons)</span>
                   <span className="text-rose-400 font-bold">*</span>
                 </span>
                 {activeShipment && (
-                  <span className="text-xs font-mono text-emerald-400">
+                  <span className="text-xs font-mono text-emerald-500 dark:text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-0.5 rounded-md border border-emerald-500/20">
                     Expected: {activeShipment.expectedWeightTons.toFixed(2)} Tons
                   </span>
                 )}
@@ -516,13 +517,13 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
                   value={actualWeightInput}
                   onChange={(e) => setActualWeightInput(e.target.value)}
                   placeholder="Enter scale reading in tons (e.g. 12.50)"
-                  style={{ paddingLeft: '3.1rem', paddingRight: '5rem' }}
-                  className={`w-full bg-slate-950/90 border rounded-xl py-3.5 text-base font-mono font-bold text-white placeholder-slate-500 focus:outline-none transition-all ${
+                  style={{ paddingLeft: '3.25rem', paddingRight: '5.5rem' }}
+                  className={`w-full bg-[var(--input-bg)] border rounded-xl py-4 text-base font-mono font-bold text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all shadow-sm ${
                     isDeviationAboveTenPercent
-                      ? 'border-amber-400/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 bg-amber-950/10'
+                      ? 'border-amber-400/80 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 bg-amber-500/10'
                       : isValidWeightNumber
-                      ? 'border-emerald-500/80 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400'
-                      : 'border-slate-700 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400'
+                      ? 'border-emerald-500/80 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20'
+                      : 'border-[var(--border-color)] focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20'
                   }`}
                   disabled={!activeShipment}
                 />
@@ -536,14 +537,14 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
                       : 'text-slate-400'
                   }`}
                 />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400 bg-slate-800/90 px-2.5 py-1 rounded-lg border border-slate-700">
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-[var(--text-muted)] bg-slate-500/15 px-2.5 py-1 rounded-lg border border-[var(--border-color)] pointer-events-none">
                   TONS
                 </span>
               </div>
 
               {!isValidWeightNumber && (
-                <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-1">
-                  <HelpCircle size={13} className="text-slate-500" />
+                <p className="text-xs text-[var(--text-muted)] flex items-center gap-1.5 mt-1">
+                  <HelpCircle size={13} className="text-slate-400" />
                   <span>Enter a positive numeric weight value to enable verification.</span>
                 </p>
               )}
@@ -552,18 +553,18 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
             {/* Deviation Calculation Readout */}
             {activeShipment && isValidWeightNumber && (
               <div
-                className={`p-4 rounded-2xl border transition-all space-y-2 ${
+                className={`p-5 rounded-2xl border transition-all space-y-3 ${
                   isDeviationAboveTenPercent
-                    ? 'bg-amber-950/30 border-amber-500/40 text-amber-200'
-                    : 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200'
+                    ? 'bg-amber-500/10 border-amber-500/40 text-amber-600 dark:text-amber-200'
+                    : 'bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-200'
                 }`}
               >
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold flex items-center gap-1.5">
                     {isDeviationAboveTenPercent ? (
-                      <AlertTriangle size={15} className="text-amber-400" />
+                      <AlertTriangle size={16} className="text-amber-400" />
                     ) : (
-                      <CheckCircle2 size={15} className="text-emerald-400" />
+                      <CheckCircle2 size={16} className="text-emerald-400" />
                     )}
                     Deviation Variance:
                   </span>
@@ -572,7 +573,7 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
                     {weightDifference.toFixed(2)} Tons ({deviationPercent.toFixed(1)}%)
                   </span>
                 </div>
-                <div className="w-full bg-slate-950 h-2.5 rounded-full mt-2 overflow-hidden border border-slate-800">
+                <div className="w-full bg-slate-500/20 h-2.5 rounded-full overflow-hidden border border-[var(--border-color)]">
                   <div
                     className={`h-full transition-all duration-300 ${
                       isDeviationAboveTenPercent ? 'bg-amber-400' : 'bg-emerald-400'
@@ -580,23 +581,23 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
                     style={{ width: `${Math.min(100, (deviationPercent / 20) * 100)}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-xs text-slate-400 mt-1 font-mono">
+                <div className="flex justify-between text-xs text-[var(--text-muted)] font-mono">
                   <span>0% Tolerance</span>
-                  <span className="text-amber-400 font-semibold">10% Threshold</span>
+                  <span className="text-amber-500 dark:text-amber-400 font-semibold">10% Threshold</span>
                   <span>20%+ High Audit</span>
                 </div>
               </div>
             )}
 
             {/* Optional Operator Audit Notes */}
-            <div className="space-y-2 pt-1">
+            <div className="space-y-2.5">
               <label
                 htmlFor="operator-notes"
-                className="text-xs font-semibold text-slate-300 flex items-center justify-between"
+                className="text-xs font-semibold text-[var(--text-secondary)] flex items-center justify-between"
               >
                 <span>Weighmaster / Scale Notes — Optional</span>
                 {isDeviationAboveTenPercent && (
-                  <span className="text-xs text-amber-400 font-semibold">
+                  <span className="text-xs text-amber-500 dark:text-amber-400 font-semibold">
                     * Audit justification recommended
                   </span>
                 )}
@@ -611,19 +612,19 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
                     ? 'Explain cause of weight discrepancy (e.g. moisture loss, partial unloading, debris)...'
                     : 'Enter weigh-scale observations, truck bay notes, or seal verification comments...'
                 }
-                className="w-full bg-slate-950/80 border border-slate-700 rounded-xl px-4 py-2.5 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 resize-none transition-all"
+                className="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl px-4 py-3 text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 resize-none transition-all shadow-sm"
               />
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-3 flex flex-col sm:flex-row gap-3.5">
+            <div className="pt-3 flex flex-col sm:flex-row gap-4">
               <button
                 type="submit"
                 id="verify-finalize-btn"
                 disabled={isVerifyButtonDisabled}
-                className={`flex-1 py-3.5 px-5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${
+                className={`flex-1 py-4 px-6 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${
                   isVerifyButtonDisabled
-                    ? 'bg-slate-800/80 text-slate-500 border border-slate-700/50 cursor-not-allowed'
+                    ? 'bg-slate-500/15 text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed'
                     : isDeviationAboveTenPercent
                     ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-amber-500/20 active:scale-[0.99]'
                     : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black shadow-emerald-500/20 active:scale-[0.99]'
@@ -645,7 +646,7 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
               <button
                 type="button"
                 onClick={handleResetTerminal}
-                className="px-5 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-700 transition-all flex items-center justify-center gap-2"
+                className="px-6 py-4 rounded-2xl bg-slate-500/10 hover:bg-slate-500/20 text-[var(--text-secondary)] font-semibold text-xs border border-[var(--border-color)] transition-all flex items-center justify-center gap-2"
               >
                 <RefreshCw size={14} />
                 <span>Reset Form</span>
@@ -654,7 +655,7 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
 
             {/* Test Case 2 Status Helper Text */}
             {isVerifyButtonDisabled && (
-              <p className="text-xs text-slate-500 text-center font-mono pt-1">
+              <p className="text-xs text-[var(--text-muted)] text-center font-mono pt-1">
                 {!activeShipment
                   ? '⚠️ Please search or select a valid Shipment UUID first.'
                   : !isValidWeightNumber
@@ -666,22 +667,22 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
         </div>
 
         {/* Right Column: Inbound Manifest Card & Warnings */}
-        <div className="lg:col-span-6 space-y-8">
+        <div className="xl:col-span-6 space-y-7 min-w-0">
           {/* TEST CASE 1 WARNING BANNER: Prominent Yellow Warning Banner when deviation > 10% */}
           {activeShipment && isValidWeightNumber && isDeviationAboveTenPercent && (
             <div
               id="weight-discrepancy-warning-banner"
-              className="bg-amber-500/15 border-2 border-amber-400 rounded-3xl p-6 sm:p-7 text-amber-200 shadow-2xl shadow-amber-500/10 animate-fade-in"
+              className="bg-amber-500/15 border-2 border-amber-400 rounded-3xl p-6 sm:p-7 text-amber-600 dark:text-amber-200 shadow-2xl shadow-amber-500/10 animate-fade-in"
             >
-              <div className="flex items-start gap-3.5">
-                <div className="p-2.5 rounded-2xl bg-amber-400 text-slate-950 shrink-0 font-bold mt-0.5 shadow-md">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-2xl bg-amber-400 text-slate-950 shrink-0 font-bold mt-0.5 shadow-md">
                   <AlertTriangle size={24} className="animate-bounce" />
                 </div>
-                <div className="space-y-2 flex-1">
-                  <h4 className="text-base font-black text-amber-300 uppercase tracking-wide">
+                <div className="space-y-2.5 flex-1">
+                  <h4 className="text-base font-black text-amber-600 dark:text-amber-300 uppercase tracking-wide">
                     Weight Discrepancy Detected — Requires Manual Audit
                   </h4>
-                  <p className="text-xs text-amber-200/90 leading-relaxed">
+                  <p className="text-xs text-amber-700 dark:text-amber-200/90 leading-relaxed">
                     The recorded actual weight (<strong>{parsedActualWeight.toFixed(2)} Tons</strong>)
                     deviates by{' '}
                     <strong className="underline decoration-amber-400 underline-offset-2">
@@ -692,14 +693,14 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
                     <strong>{expectedWeight.toFixed(2)} Tons</strong>), which exceeds the allowable
                     10.0% operational tolerance threshold.
                   </p>
-                  <div className="pt-2 flex flex-wrap items-center gap-2 text-xs font-mono text-amber-300/90">
-                    <span className="bg-amber-400/20 px-2.5 py-1 rounded-lg border border-amber-400/30">
+                  <div className="pt-2 flex flex-wrap items-center gap-2 text-xs font-mono">
+                    <span className="bg-amber-400/20 px-3 py-1 rounded-lg border border-amber-400/30 text-amber-700 dark:text-amber-300 font-semibold">
                       FLAG: AUDIT_REQUIRED
                     </span>
-                    <span className="bg-amber-400/20 px-2.5 py-1 rounded-lg border border-amber-400/30">
+                    <span className="bg-amber-400/20 px-3 py-1 rounded-lg border border-amber-400/30 text-amber-700 dark:text-amber-300 font-semibold">
                       THRESHOLD: ±10.0%
                     </span>
-                    <span className="bg-amber-400/20 px-2.5 py-1 rounded-lg border border-amber-400/30">
+                    <span className="bg-amber-400/20 px-3 py-1 rounded-lg border border-amber-400/30 text-amber-700 dark:text-amber-300 font-semibold">
                       VARIANCE: {deviationPercent.toFixed(2)}%
                     </span>
                   </div>
@@ -710,26 +711,26 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
 
           {/* Shipment Manifest Card */}
           {activeShipment ? (
-            <div className="bg-slate-900/60 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6">
-              <div className="flex items-start justify-between gap-3 pb-4 border-b border-white/[0.08]">
+            <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-7 shadow-xl backdrop-blur-xl space-y-6">
+              <div className="flex items-start justify-between gap-4 pb-5 border-b border-[var(--border-color)]">
                 <div className="space-y-1">
-                  <span className="text-xs font-mono uppercase tracking-widest text-slate-400">
+                  <span className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)]">
                     Inbound Manifest Record
                   </span>
-                  <h3 className="text-xl font-bold font-mono text-white flex items-center gap-2">
+                  <h3 className="text-xl font-bold font-mono text-[var(--text-primary)] flex items-center gap-2">
                     <Hash size={20} className="text-indigo-400" />
                     {activeShipment.shipmentId}
                   </h3>
                 </div>
                 <span
-                  className={`px-3.5 py-1 rounded-full text-xs font-bold border ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold border ${
                     activeShipment.wasteType === 'Hazardous'
-                      ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                      ? 'bg-rose-500/15 text-rose-500 dark:text-rose-400 border-rose-500/30'
                       : activeShipment.wasteType === 'Organic'
-                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                      ? 'bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 border-emerald-500/30'
                       : activeShipment.wasteType === 'Recyclable'
-                      ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30'
-                      : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                      ? 'bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 border-cyan-500/30'
+                      : 'bg-amber-500/15 text-amber-500 dark:text-amber-400 border-amber-500/30'
                   }`}
                 >
                   {activeShipment.wasteType}
@@ -737,95 +738,95 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
               </div>
 
               {/* Three Required Displays: Expected Weight, Declared Waste Type, Generator Name */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* Expected Weight Card */}
-                <div className="bg-slate-950/60 border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between space-y-2">
-                  <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between space-y-3">
+                  <span className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
                     <Scale size={15} className="text-emerald-400" />
                     Expected Weight
                   </span>
                   <div>
-                    <span className="text-2xl font-mono font-extrabold text-white">
+                    <span className="text-2xl font-mono font-extrabold text-[var(--text-primary)]">
                       {activeShipment.expectedWeightTons.toFixed(2)}
                     </span>
-                    <span className="text-xs font-mono text-slate-400 ml-1.5">Tons</span>
+                    <span className="text-xs font-mono text-[var(--text-muted)] ml-1.5 font-bold">Tons</span>
                   </div>
-                  <span className="text-xs text-slate-400 font-mono">
+                  <span className="text-xs text-[var(--text-muted)] font-mono">
                     {(activeShipment.expectedWeightTons * 1000).toLocaleString()} kg total
                   </span>
                 </div>
 
                 {/* Declared Waste Type Card */}
-                <div className="bg-slate-950/60 border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between space-y-2">
-                  <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between space-y-3">
+                  <span className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
                     <Layers size={15} className="text-cyan-400" />
                     Declared Waste
                   </span>
                   <div>
-                    <span className="text-lg font-bold text-white">
+                    <span className="text-lg font-bold text-[var(--text-primary)]">
                       {activeShipment.wasteType}
                     </span>
                   </div>
-                  <span className="text-xs text-cyan-400 font-mono">
+                  <span className="text-xs text-cyan-500 dark:text-cyan-400 font-mono font-semibold">
                     Verified Stream
                   </span>
                 </div>
 
                 {/* Generator Name Card */}
-                <div className="bg-slate-950/60 border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between space-y-2">
-                  <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between space-y-3">
+                  <span className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
                     <Building2 size={15} className="text-amber-400" />
                     Generator
                   </span>
                   <div>
-                    <span className="text-xs font-bold text-slate-200 line-clamp-2 leading-relaxed">
+                    <span className="text-xs font-bold text-[var(--text-primary)] line-clamp-2 leading-relaxed">
                       {activeShipment.generatorName}
                     </span>
                   </div>
-                  <span className="text-xs text-slate-400 font-mono">
+                  <span className="text-xs text-[var(--text-muted)] font-mono">
                     Origin Verified
                   </span>
                 </div>
               </div>
 
               {/* Extended Manifest Details (Truck / Logistics Metadata) */}
-              <div className="bg-slate-950/60 border border-white/[0.06] rounded-2xl p-5 space-y-3.5 text-xs">
-                <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
-                  <span className="text-slate-400 flex items-center gap-1.5">
-                    <Truck size={14} className="text-slate-500" />
+              <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-5 sm:p-6 space-y-3.5 text-xs shadow-sm">
+                <div className="flex items-center justify-between py-2 border-b border-[var(--border-color)]/70">
+                  <span className="text-[var(--text-secondary)] flex items-center gap-2">
+                    <Truck size={15} className="text-indigo-400" />
                     Transport Vehicle:
                   </span>
-                  <span className="font-mono font-semibold text-slate-200">
+                  <span className="font-mono font-semibold text-[var(--text-primary)]">
                     {activeShipment.vehicleRegistration || 'GJ-01-STANDARD'}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
-                  <span className="text-slate-400 flex items-center gap-1.5">
-                    <ClipboardCheck size={14} className="text-slate-500" />
+                <div className="flex items-center justify-between py-2 border-b border-[var(--border-color)]/70">
+                  <span className="text-[var(--text-secondary)] flex items-center gap-2">
+                    <ClipboardCheck size={15} className="text-emerald-400" />
                     Security Seal #:
                   </span>
-                  <span className="font-mono font-semibold text-emerald-400">
+                  <span className="font-mono font-semibold text-emerald-500 dark:text-emerald-400">
                     {activeShipment.sealNumber || 'SEAL-INTACT-01'}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
-                  <span className="text-slate-400 flex items-center gap-1.5">
-                    <Building2 size={14} className="text-slate-500" />
+                <div className="flex items-center justify-between py-2 border-b border-[var(--border-color)]/70">
+                  <span className="text-[var(--text-secondary)] flex items-center gap-2">
+                    <Building2 size={15} className="text-amber-400" />
                     Origin Facility:
                   </span>
-                  <span className="text-slate-300 truncate max-w-xs">
+                  <span className="text-[var(--text-primary)] font-medium truncate max-w-xs">
                     {activeShipment.originLocation || 'Regional Collection Center'}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-slate-400 flex items-center gap-1.5">
-                    <Clock size={14} className="text-slate-500" />
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-[var(--text-secondary)] flex items-center gap-2">
+                    <Clock size={15} className="text-cyan-400" />
                     Dispatch Time:
                   </span>
-                  <span className="font-mono text-slate-300">
+                  <span className="font-mono text-[var(--text-primary)] font-semibold">
                     {activeShipment.dispatchTimestamp
                       ? new Date(activeShipment.dispatchTimestamp).toLocaleTimeString()
                       : 'Just now'}
@@ -834,31 +835,33 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
               </div>
             </div>
           ) : (
-            <div className="bg-slate-900/40 border border-dashed border-white/[0.1] rounded-3xl p-10 text-center space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-white/[0.04] flex items-center justify-center mx-auto text-slate-400">
-                <FileText size={28} />
+            <div className="bg-[var(--bg-card)] border border-dashed border-[var(--border-color)] rounded-3xl p-12 text-center space-y-5 shadow-sm">
+              <div className="w-16 h-16 rounded-2xl bg-slate-500/10 border border-[var(--border-color)] flex items-center justify-center mx-auto text-[var(--text-muted)]">
+                <FileText size={30} />
               </div>
-              <h4 className="text-base font-semibold text-slate-200">No Manifest Selected</h4>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-                Search for an incoming truck manifest UUID above or click one of the preset
-                manifests to inspect expected weight and declared waste details.
-              </p>
+              <div className="space-y-1.5">
+                <h4 className="text-base font-bold text-[var(--text-primary)]">No Manifest Selected</h4>
+                <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto leading-relaxed">
+                  Search for an incoming truck manifest UUID above or click one of the preset
+                  manifests to inspect expected weight and declared waste details.
+                </p>
+              </div>
             </div>
           )}
 
           {/* Submission / Verification Success Receipt */}
           {submissionResult && submissionResult.success && (
-            <div className="bg-slate-900/90 border-2 border-emerald-500/80 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-emerald-500/10 space-y-5 animate-fade-in">
+            <div className="bg-[var(--bg-card)] border-2 border-emerald-500/80 rounded-3xl p-7 sm:p-9 shadow-2xl shadow-emerald-500/10 space-y-6 animate-fade-in text-[var(--text-primary)]">
               <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-2xl bg-emerald-500 text-slate-950 font-bold shadow-md">
-                    <CheckCircle2 size={22} />
+                <div className="flex items-center gap-3.5">
+                  <div className="p-3 rounded-2xl bg-emerald-500 text-slate-950 font-bold shadow-md">
+                    <CheckCircle2 size={24} />
                   </div>
                   <div>
-                    <h4 className="text-base font-bold text-white">
+                    <h4 className="text-base font-bold text-[var(--text-primary)]">
                       Weigh-Station Record Finalized
                     </h4>
-                    <p className="text-xs text-emerald-400 font-mono mt-0.5">
+                    <p className="text-xs text-emerald-500 dark:text-emerald-400 font-mono mt-0.5">
                       Receipt: {submissionResult.receiptId}
                     </p>
                   </div>
@@ -866,41 +869,41 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono flex items-center gap-1.5 border border-slate-700 transition-all"
+                  className="px-4 py-2 rounded-xl bg-slate-500/10 hover:bg-slate-500/20 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-mono flex items-center gap-1.5 border border-[var(--border-color)] transition-all shadow-sm"
                 >
-                  <Printer size={13} />
+                  <Printer size={14} />
                   <span>Print Ticket</span>
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-950/60 p-5 rounded-2xl border border-white/[0.06] text-xs font-mono">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[var(--bg-surface)] p-5 rounded-2xl border border-[var(--border-color)] text-xs font-mono shadow-sm">
                 <div>
-                  <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">EXPECTED</span>
-                  <span className="text-slate-200 font-bold text-sm">
+                  <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider block font-semibold">EXPECTED</span>
+                  <span className="text-[var(--text-primary)] font-bold text-sm">
                     {submissionResult.expectedWeightTons?.toFixed(2)} T
                   </span>
                 </div>
                 <div>
-                  <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">ACTUAL</span>
-                  <span className="text-emerald-400 font-bold text-sm">
+                  <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider block font-semibold">ACTUAL</span>
+                  <span className="text-emerald-500 dark:text-emerald-400 font-bold text-sm">
                     {submissionResult.actualWeightTons?.toFixed(2)} T
                   </span>
                 </div>
                 <div>
-                  <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">VARIANCE</span>
+                  <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider block font-semibold">VARIANCE</span>
                   <span
                     className={`font-bold text-sm ${
-                      submissionResult.hasDiscrepancy ? 'text-amber-400' : 'text-emerald-400'
+                      submissionResult.hasDiscrepancy ? 'text-amber-500 dark:text-amber-400' : 'text-emerald-500 dark:text-emerald-400'
                     }`}
                   >
                     {submissionResult.deviationPercent?.toFixed(1)}%
                   </span>
                 </div>
                 <div>
-                  <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">AUDIT STATUS</span>
+                  <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider block font-semibold">AUDIT STATUS</span>
                   <span
                     className={`font-bold text-sm ${
-                      submissionResult.hasDiscrepancy ? 'text-amber-400' : 'text-emerald-400'
+                      submissionResult.hasDiscrepancy ? 'text-amber-500 dark:text-amber-400' : 'text-emerald-500 dark:text-emerald-400'
                     }`}
                   >
                     {submissionResult.hasDiscrepancy ? 'AUDIT_LOGGED' : 'CLEARED'}
@@ -908,7 +911,7 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
                 </div>
               </div>
 
-              <p className="text-xs text-slate-300">{submissionResult.message}</p>
+              <p className="text-xs text-[var(--text-secondary)]">{submissionResult.message}</p>
             </div>
           )}
         </div>

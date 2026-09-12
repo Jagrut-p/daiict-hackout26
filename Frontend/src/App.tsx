@@ -53,7 +53,7 @@ const RevealSection: React.FC<{
   return (
     <div
       ref={ref}
-      className={`${className} transition-all duration-700 ease-out`}
+      className={`${className} w-full min-w-0 transition-all duration-700 ease-out`}
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateY(0) scale(1)' : 'translateY(28px) scale(0.99)',
@@ -251,12 +251,15 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-slate-100 selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen w-full bg-[var(--bg-main)] text-[var(--text-primary)] selection:bg-indigo-500/30 selection:text-indigo-200 transition-colors duration-300">
       {/* Apple & Samsung Cinematic Hero Section */}
       <HeroSection onExplore={handleExplore} />
 
+      {/* Seamless Ambient Transition Blend Zone */}
+      <div className="relative w-full h-20 sm:h-28 -mt-20 sm:-mt-28 pointer-events-none bg-gradient-to-b from-transparent via-[var(--bg-main)]/70 to-[var(--bg-main)] z-10" />
+
       {/* Main Interactive Enterprise Workstation */}
-      <div ref={dashboardRef} id="console-view" className="relative z-10 scroll-mt-4">
+      <div ref={dashboardRef} id="console-view" className="relative z-10 scroll-mt-4 w-full">
         <AppLayout activeTab={activeTab} onTabChange={setActiveTab}>
           {activeTab === 'esg' && (
             <RevealSection className="view-container">

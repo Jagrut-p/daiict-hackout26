@@ -194,7 +194,7 @@ export const SyncNotificationCenter: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsDrawerOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-950/80 border border-amber-500/50 text-amber-300 text-xs font-mono font-bold shadow-lg shadow-amber-500/10 backdrop-blur-md hover:bg-amber-900/80 transition-all cursor-pointer animate-pulse"
+            className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-amber-950/85 border border-amber-500/50 text-amber-300 text-xs font-mono font-bold shadow-lg shadow-amber-500/15 backdrop-blur-md hover:bg-amber-900/85 transition-all cursor-pointer animate-pulse"
             title="Click to view syncing queue details"
           >
             <RefreshCw size={14} className="animate-spin text-amber-400" />
@@ -207,7 +207,7 @@ export const SyncNotificationCenter: React.FC = () => {
             id="offline-status-pill"
             onClick={() => setIsDrawerOpen(true)}
             // TEST CASE 2: Clicking the "X items queued" pill opens a mini drawer displaying client UUIDs
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-950/80 border border-rose-500/50 text-rose-300 text-xs font-mono font-bold shadow-lg shadow-rose-500/10 backdrop-blur-md hover:bg-rose-900/80 transition-all cursor-pointer"
+            className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-rose-950/85 border border-rose-500/50 text-rose-300 text-xs font-mono font-bold shadow-lg shadow-rose-500/15 backdrop-blur-md hover:bg-rose-900/85 transition-all cursor-pointer"
             title="Click to view offline queued manifest UUIDs in local storage"
           >
             <span className="relative flex h-2 w-2">
@@ -222,7 +222,7 @@ export const SyncNotificationCenter: React.FC = () => {
             type="button"
             id="online-status-pill"
             onClick={() => setIsDrawerOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-emerald-400/30 text-emerald-300 text-xs font-mono font-medium shadow-lg backdrop-blur-md hover:bg-slate-850 transition-all cursor-pointer"
+            className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-emerald-400/35 text-emerald-500 dark:text-emerald-300 text-xs font-mono font-medium shadow-lg backdrop-blur-md hover:border-emerald-400/60 transition-all cursor-pointer"
             title={
               queuedCount > 0
                 ? `Connected (${queuedCount} offline items ready to sync). Click to inspect.`

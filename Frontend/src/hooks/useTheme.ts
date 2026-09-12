@@ -19,6 +19,13 @@ export function useTheme() {
       root.classList.remove('dark', 'light');
       root.classList.add(theme);
       root.setAttribute('data-theme', theme);
+      
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.classList.remove('dark', 'light');
+        document.body.classList.add(theme);
+        document.body.setAttribute('data-theme', theme);
+      }
+      
       localStorage.setItem('carbonroute_theme', theme);
     } catch {
       // Ignore if localStorage unavailable
