@@ -778,7 +778,7 @@ def calculate_carbon_internal(shipment_uuid: str) -> Dict[str, Any]:
     })
     
     dist_km = haversine_km(gen["lat"], gen["lng"], fac["lat"], fac["lng"])
-    qty = shipment.get("weightTons", shipment.get("weightKg", 1000.0) / 1000.0)
+    qty = shipment.get("verifiedWeightTons") or shipment.get("weightTons", shipment.get("weightKg", 1000.0) / 1000.0)
     
     # Compute transport emissions using CVRP route optimization solver if available
     route_dist_km = None
