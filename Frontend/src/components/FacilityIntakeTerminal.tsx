@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useId } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import {
   Scale,
   Search,
@@ -337,13 +337,19 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
 
   return (
     <div className="fit-root">
-      {/* Header */}
-      <div className="fit-header">
+      {/* Header with Visual Continuity */}
+      <div className="fit-header relative">
         <div className="fit-header-left">
           <div className="fit-header-icon-wrap">
             <Scale size={22} className="fit-header-icon" />
           </div>
           <div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-400/25 text-amber-600 dark:text-amber-300 text-[10px] font-mono font-semibold uppercase tracking-wider mb-1.5">
+              <Sparkles size={11} />
+              <span>Weigh Station Telemetry Terminal</span>
+              <span className="w-1 h-1 rounded-full bg-amber-400" />
+              <span>Bay 02 Active</span>
+            </div>
             <h2 className="fit-title">Facility Intake Terminal</h2>
             <p className="fit-subtitle">
               Weigh-station operator inbound verification &amp; audit console
@@ -351,7 +357,7 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
           </div>
         </div>
         <div className="fit-header-right">
-          <div className="fit-bay-badge">
+          <div className="fit-bay-badge" role="status" aria-label="Weigh Station Bay 02 Active">
             <Scale size={13} />
             <span>Bay 02 Active</span>
           </div>
@@ -359,8 +365,10 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
             <button
               key={manifest.shipmentId}
               type="button"
+              aria-label={`Select preset manifest ${manifest.shipmentId} from ${manifest.generatorName}`}
+              aria-pressed={activeShipment?.shipmentId === manifest.shipmentId}
               onClick={() => handleSelectPreset(manifest)}
-              className={`fit-manifest-btn ${
+              className={`fit-manifest-btn focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
                 activeShipment?.shipmentId === manifest.shipmentId ? 'fit-manifest-btn--active' : ''
               }`}
             >
@@ -373,13 +381,13 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
 
       {/* Warning Banner: Deviation > 10% */}
       {activeShipment && isValidWeightNumber && isDeviationAboveTenPercent && (
-        <div className="fit-warning-banner" id="weight-discrepancy-warning-banner">
+        <div className="fit-warning-banner" id="weight-discrepancy-warning-banner" role="alert">
           <div className="fit-warning-icon">
             <AlertTriangle size={22} />
           </div>
           <div>
             <strong style={{ display: 'block', marginBottom: '0.25rem' }}>
-              Weight Discrepancy Detected â€” Requires Manual Audit
+              Weight Discrepancy Detected — Requires Manual Audit
             </strong>
             <p style={{ fontSize: '0.78rem', lineHeight: 1.5, margin: 0 }}>
               Actual weight (<strong>{parsedActualWeight.toFixed(2)} T</strong>) deviates by{' '}
@@ -390,7 +398,7 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
             </p>
             <div className="fit-warning-flags">
               <span className="fit-warning-flag">AUDIT_REQUIRED</span>
-              <span className="fit-warning-flag">Â±10.0% THRESHOLD</span>
+              <span className="fit-warning-flag">±10.0% THRESHOLD</span>
               <span className="fit-warning-flag">VARIANCE: {deviationPercent.toFixed(2)}%</span>
             </div>
           </div>

@@ -54,8 +54,9 @@ export const NetworkSimulator: React.FC = () => {
           <button
             type="button"
             id="toggle-network-status-btn"
+            aria-label={isSimulatedOffline ? "Restore network connectivity and trigger auto-sync" : "Simulate going offline for test case 1"}
             onClick={() => toggleSimulatedOffline()}
-            className={`btn-sim ${isSimulatedOffline ? 'btn-sim-reconnect' : 'btn-sim-offline'}`}
+            className={`btn-sim focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${isSimulatedOffline ? 'btn-sim-reconnect' : 'btn-sim-offline'}`}
           >
             {isSimulatedOffline ? (
               <>
@@ -83,12 +84,14 @@ export const NetworkSimulator: React.FC = () => {
             </span>
           </div>
 
-          <div className="mode-button-group">
+          <div className="mode-button-group" role="group" aria-label="Mock server response modes">
             <button
               type="button"
               id="mode-auto-btn"
+              aria-pressed={currentMode === 'auto'}
+              aria-label="Set mock server to auto mode (201 for new, 200 for idempotency)"
               onClick={() => handleModeChange('auto')}
-              className={`mode-btn ${currentMode === 'auto' ? 'mode-btn-active' : ''}`}
+              className={`mode-btn focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${currentMode === 'auto' ? 'mode-btn-active' : ''}`}
               title="201 for new, 200 for idempotency"
             >
               <CheckCircle size={14} />
@@ -98,8 +101,10 @@ export const NetworkSimulator: React.FC = () => {
             <button
               type="button"
               id="mode-force-200-btn"
+              aria-pressed={currentMode === 'force_200'}
+              aria-label="Force mock server to return 200 OK idempotent success"
               onClick={() => handleModeChange('force_200')}
-              className={`mode-btn ${currentMode === 'force_200' ? 'mode-btn-active' : ''}`}
+              className={`mode-btn focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${currentMode === 'force_200' ? 'mode-btn-active' : ''}`}
               title="Force 200 OK (Idempotent Success)"
             >
               200 OK (TC 3)
@@ -108,8 +113,10 @@ export const NetworkSimulator: React.FC = () => {
             <button
               type="button"
               id="mode-force-201-btn"
+              aria-pressed={currentMode === 'force_201'}
+              aria-label="Force mock server to return 201 Created"
               onClick={() => handleModeChange('force_201')}
-              className={`mode-btn ${currentMode === 'force_201' ? 'mode-btn-active' : ''}`}
+              className={`mode-btn focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${currentMode === 'force_201' ? 'mode-btn-active' : ''}`}
               title="Force 201 Created"
             >
               201 Created (TC 3)
@@ -118,8 +125,10 @@ export const NetworkSimulator: React.FC = () => {
             <button
               type="button"
               id="mode-force-409-btn"
+              aria-pressed={currentMode === 'force_409'}
+              aria-label="Force mock server to return 409 Conflict duplicate claim"
               onClick={() => handleModeChange('force_409')}
-              className={`mode-btn mode-btn-danger ${currentMode === 'force_409' ? 'mode-btn-active' : ''}`}
+              className={`mode-btn mode-btn-danger focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${currentMode === 'force_409' ? 'mode-btn-active' : ''}`}
               title="Force 409 Conflict (Duplicate Claim)"
             >
               <ShieldAlert size={14} />
@@ -129,8 +138,10 @@ export const NetworkSimulator: React.FC = () => {
             <button
               type="button"
               id="mode-force-500-btn"
+              aria-pressed={currentMode === 'force_500'}
+              aria-label="Force mock server to return 500 Internal Error"
               onClick={() => handleModeChange('force_500')}
-              className={`mode-btn mode-btn-warn ${currentMode === 'force_500' ? 'mode-btn-active' : ''}`}
+              className={`mode-btn mode-btn-warn focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${currentMode === 'force_500' ? 'mode-btn-active' : ''}`}
               title="Force 500 Internal Error"
             >
               500 Error

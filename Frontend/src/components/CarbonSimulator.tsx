@@ -28,6 +28,7 @@ import {
   Truck,
   CheckCircle2,
   Info,
+  Sparkles,
 } from 'lucide-react';
 
 // ─── Constants & Defaults ────────────────────────────────────────────────────
@@ -284,13 +285,19 @@ export const CarbonSimulator: React.FC = () => {
 
   return (
     <div className="cs-root">
-      {/* Header */}
-      <div className="cs-header">
+      {/* Header with Visual Continuity */}
+      <div className="cs-header relative">
         <div className="cs-header-left">
           <div className="cs-header-icon-wrap">
             <FlaskConical size={22} className="cs-header-icon" />
           </div>
           <div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-400/25 text-purple-600 dark:text-purple-300 text-[10px] font-mono font-semibold uppercase tracking-wider mb-1.5">
+              <Sparkles size={11} />
+              <span>IPCC AR6 Climate Sandbox</span>
+              <span className="w-1 h-1 rounded-full bg-purple-400" />
+              <span>Sensitivity Engine</span>
+            </div>
             <h2 className="cs-title">Carbon Impact Simulator</h2>
             <p className="cs-subtitle">
               AR6-aligned parameter sandbox · Adjust variables to see real-time carbon accounting
@@ -298,16 +305,18 @@ export const CarbonSimulator: React.FC = () => {
           </div>
         </div>
         <div className="cs-header-right">
-          <div className="cs-scenario-badge">
+          <div className="cs-scenario-badge" role="status" aria-label={`Monthly scenario: ${WASTE_VOLUME_TONS} tons per month, ${trips} trips, ${TRUCK_PAYLOAD_TONS} tons payload`}>
             <Truck size={13} />
             <span>{WASTE_VOLUME_TONS} t/month · {trips} trips · {TRUCK_PAYLOAD_TONS}-t payload</span>
           </div>
           {/* TEST CASE 2: Reset Button */}
           <button
             id="cs-reset-btn"
+            type="button"
             onClick={handleReset}
             disabled={isAtDefaults}
-            className={`cs-reset-btn ${justReset ? 'cs-reset-btn--success' : ''}`}
+            aria-label="Reset simulation parameters to IPCC AR6 standard defaults"
+            className={`cs-reset-btn focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${justReset ? 'cs-reset-btn--success' : ''}`}
           >
             {justReset ? (
               <><CheckCircle2 size={14} /><span>Restored!</span></>

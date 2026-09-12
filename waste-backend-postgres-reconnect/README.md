@@ -83,25 +83,44 @@ Frontend:
 Backend:
   - API Framework: Python 3.11+, FastAPI, Uvicorn
   - Optimization Engine: Google OR-Tools (Capacitated Vehicle Routing Problem)
-  - Data Store: Hybrid architecture — PostgreSQL (PostGIS) persistent storage with fast in-memory caching and graceful offline fallback
+  - Data Store: PostgreSQL via SQLAlchemy, with idempotent UUID deduplication
+    (optional PostGIS geography column on generators/facilities — see below)
   - Validation & Models: Pydantic v2
 
 --------------------------------------------------------------------------------
 6. SETUP & INSTALLATION
 --------------------------------------------------------------------------------
+DATABASE SETUP (PostgreSQL — required before starting the backend):
+  1. Install PostgreSQL locally (or use a hosted instance) and make sure it's running.
+  2. Create the database:
+       createdb waste_carbon_db
+     (or: psql -U postgres -c "CREATE DATABASE waste_carbon_db;")
+  3. (Optional) Set a custom connection string via env var — defaults to
+     postgresql://postgres:postgres@localhost:5432/waste_carbon_db :
+       export DATABASE_URL="postgresql://<user>:<password>@<host>:5432/waste_carbon_db"
+  4. (Optional) If your Postgres server has the `postgis` extension package
+     installed, set ENABLE_POSTGIS=true to add a geography column to
+     generators/facilities for future spatial queries:
+       export ENABLE_POSTGIS=true
+     Leave this unset/false for a plain vanilla Postgres install.
+
 BACKEND SETUP (Run from repository root):
   python -m venv venv
   venv\Scripts\activate          # On Linux/macOS: source venv/bin/activate
   pip install -r requirements.txt
   uvicorn main:app --reload --port 8000
 
-  *Database Configuration:
-   The backend connects to PostgreSQL via `DATABASE_URL`:
-   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/waste_carbon_db
-   If unreachable, the backend safely falls back to in-memory mode without crashing.
-
   *Note: Backend server runs at http://127.0.0.1:8000. Interactive Swagger docs
-  are available at http://127.0.0.1:8000/docs.
+  are available at http://127.0.0.1:8000/docs. Tables are created automatically
+  on first startup, and baseline demo data (facilities/generators/shipments) is
+  seeded automatically the first time the database is empty. Use
+  POST /reset-data any time to wipe and reload the demo dataset.
+
+  *Note on migrations-reference/: seed_db.py / seed_multistop.py in that folder
+  are the ORIGINAL (older) hand-written PostgreSQL/PostGIS schema and are kept
+  as historical reference only — they are not run by the app. The live schema
+  now lives in models.py (SQLAlchemy) and is created automatically by
+  database.init_db() on startup.
 
 FRONTEND SETUP (Run from Frontend/ directory):
   cd Frontend
@@ -117,9 +136,9 @@ FRONTEND SETUP (Run from Frontend/ directory):
 --------------------------------------------------------------------------------
 1. Client-Generated UUIDs: Idempotent keys prevent duplicate submissions 
    during network retries.
-2. Idempotent In-Memory Registry: A unique shipment ID (UUID) is enforced as 
-   an immutable key in the SHIPMENTS dictionary, preventing duplicate processing 
-   or multi-batch double-claiming.
+2. Idempotent Persistent Registry: A unique shipment ID (UUID) is enforced as 
+   the primary key of the shipments table in Postgres, preventing duplicate 
+   processing or multi-batch double-claiming across server restarts.
 3. Weight Discrepancy Auditing: Automatic flagging occurs if destination 
    intake weights deviate from collection origin logs.
 4. Version-Locked Certificates: Generated certificates link directly to fixed 

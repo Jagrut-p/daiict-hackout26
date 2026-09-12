@@ -362,35 +362,53 @@ export const GisRouteViewer: React.FC = () => {
 
   return (
     <div className="gis-viewer-container space-y-8">
-      {/* Test Case Quick Bar */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-xl">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      {/* Test Case Quick Bar with Visual Continuity */}
+      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-xl relative overflow-hidden group">
+        {/* Specular Shimmer Accent Line & Light Halo */}
+        <div className="absolute top-0 right-0 w-72 h-72 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
+
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
           <div>
+            {/* Signature Eyebrow Pill */}
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-400/25 text-emerald-600 dark:text-emerald-300 text-[10px] font-mono font-semibold uppercase tracking-wider mb-2">
+              <Sparkles size={11} />
+              <span>GIS Geospatial Optimization Engine</span>
+              <span className="w-1 h-1 rounded-full bg-emerald-400" />
+              <span>OR-Tools CVRP</span>
+            </div>
+
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+              <span className="p-1.5 rounded-xl bg-emerald-500/20 text-emerald-500 dark:text-emerald-400 border border-emerald-500/30">
                 <Leaf size={18} />
               </span>
-              <h3 className="font-bold text-base text-[var(--text-primary)]">GIS Route & Facility Visualizer</h3>
-              <span className="version-pill">Leaflet + FastAPI GIS</span>
-              <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 shadow-sm">
+              <h3 className="font-black text-lg sm:text-xl text-[var(--text-primary)] tracking-tight">
+                GIS Route &amp; Facility Visualizer
+              </h3>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[var(--text-secondary)]">
+                Leaflet + FastAPI GIS
+              </span>
+              <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 shadow-sm">
                 <Key size={12} />
                 <span>GIS API: Authenticated</span>
               </span>
             </div>
-            <p className="text-xs text-[var(--text-secondary)] mt-1">
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
               Visualizes waste discovery, multi-stop CVRP collection routes, and live carbon-aware facility assignment.
             </p>
           </div>
 
           {/* Test Case Selector Buttons */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="GIS Scenario Selection">
             <button
               type="button"
               onClick={() => setActiveScenario('full')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              aria-pressed={activeScenario === 'full'}
+              aria-label="Load Full Value Chain Scenario (4 Generators + 3 Facilities + 2 Routes)"
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
                 activeScenario === 'full'
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 font-bold'
+                  : 'bg-[var(--bg-card-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-color)]'
               }`}
             >
               <Sparkles size={13} />
@@ -401,10 +419,12 @@ export const GisRouteViewer: React.FC = () => {
               type="button"
               onClick={handleRunCvrpOptimization}
               disabled={isOptimizingCvrp}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              aria-pressed={activeScenario === 'multistop'}
+              aria-label="Optimize multi-stop route via Google OR-Tools CVRP solver"
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
                 activeScenario === 'multistop'
-                  ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                  ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 font-bold'
+                  : 'bg-[var(--bg-card-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-color)]'
               }`}
               title="Optimize multi-stop route via Google OR-Tools CVRP solver"
             >
@@ -415,10 +435,12 @@ export const GisRouteViewer: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveScenario('empty')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              aria-pressed={activeScenario === 'empty'}
+              aria-label="Test Case 1: Empty state centering on default city"
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
                 activeScenario === 'empty'
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-bold'
+                  : 'bg-[var(--bg-card-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-color)]'
               }`}
               title="Test Case 1: Empty state centering on default city"
             >
@@ -429,16 +451,17 @@ export const GisRouteViewer: React.FC = () => {
         </div>
 
         {/* Real-Time Carbon-Aware Matcher Bar */}
-        <div className="mt-5 pt-5 border-t border-slate-800 flex flex-wrap items-center justify-between gap-4">
+        <div className="mt-5 pt-5 border-t border-[var(--border-color)] flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-slate-300 font-semibold flex items-center gap-1">
-              <Navigation size={13} className="text-cyan-400" />
+            <span className="text-xs text-[var(--text-primary)] font-semibold flex items-center gap-1">
+              <Navigation size={13} className="text-cyan-500" />
               Backend Carbon-Aware Match Engine:
             </span>
             <select
               value={selectedGeneratorId}
               onChange={(e) => setSelectedGeneratorId(e.target.value)}
-              className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-medium focus:outline-none focus:border-cyan-400"
+              aria-label="Select waste generator for optimal destination matching"
+              className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl px-3 py-1.5 text-xs text-[var(--text-primary)] font-medium focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
             >
               {liveGenerators.map((g) => (
                 <option key={g.id} value={g.id}>
@@ -451,7 +474,8 @@ export const GisRouteViewer: React.FC = () => {
               type="button"
               onClick={handleRunBackendMatch}
               disabled={isMatching}
-              className="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all flex items-center gap-1 shadow-sm disabled:opacity-50"
+              aria-label="Calculate optimal processing destination with net carbon benefit"
+              className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
             >
               <Zap size={12} className={isMatching ? 'animate-bounce' : ''} />
               <span>{isMatching ? 'Calculating MRV...' : 'Calculate Optimal Destination'}</span>
@@ -459,32 +483,33 @@ export const GisRouteViewer: React.FC = () => {
           </div>
 
           {matchResult && matchResult.optimal_facility && (
-            <div className="text-xs text-emerald-300 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1 rounded-xl flex items-center gap-2 font-mono">
+            <div className="text-xs text-emerald-600 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl flex items-center gap-2 font-mono">
               <span>Optimal: <strong>{matchResult.optimal_facility.facility_name}</strong></span>
               <span>•</span>
               <span>{matchResult.optimal_facility.distance_km} km</span>
               <span>•</span>
-              <span className="text-emerald-400">+{matchResult.optimal_facility.net_carbon_benefit_tCO2e} tCO₂e net</span>
+              <span className="text-emerald-500 dark:text-emerald-400 font-bold">+{matchResult.optimal_facility.net_carbon_benefit_tCO2e} tCO₂e net</span>
             </div>
           )}
         </div>
 
         {/* Real-Time CVRP Multi-Stop Optimizer Controls */}
-        <div className="mt-3 pt-3 border-t border-slate-800 space-y-2.5">
+        <div className="mt-4 pt-4 border-t border-[var(--border-color)] space-y-3 relative z-10">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-slate-300 font-semibold flex items-center gap-1">
-                <RouteIcon size={13} className="text-cyan-400" />
+              <span className="text-xs text-[var(--text-primary)] font-semibold flex items-center gap-1">
+                <RouteIcon size={13} className="text-cyan-500" />
                 OR-Tools CVRP Optimizer:
               </span>
 
               {/* Destination Facility Dropdown */}
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-slate-400">Drop-off:</span>
+                <span className="text-xs text-[var(--text-secondary)]">Drop-off:</span>
                 <select
                   value={selectedCvrpFacilityId}
                   onChange={(e) => setSelectedCvrpFacilityId(e.target.value)}
-                  className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-medium focus:outline-none focus:border-cyan-400"
+                  aria-label="Select destination facility for CVRP drop-off"
+                  className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl px-3 py-1.5 text-xs text-[var(--text-primary)] font-medium focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
                 >
                   {liveFacilities.map((f) => (
                     <option key={f.id} value={f.id}>
@@ -498,7 +523,8 @@ export const GisRouteViewer: React.FC = () => {
                 type="button"
                 onClick={handleRunCvrpOptimization}
                 disabled={isOptimizingCvrp || selectedCvrpGenerators.length === 0}
-                className="px-3 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-all flex items-center gap-1 shadow-sm disabled:opacity-50"
+                aria-label="Run Google OR-Tools CVRP optimizer for selected pickup stops"
+                className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
               >
                 <RouteIcon size={12} className={isOptimizingCvrp ? 'animate-spin' : ''} />
                 <span>{isOptimizingCvrp ? 'Solving CVRP Route...' : 'Run CVRP Optimizer'}</span>
@@ -507,34 +533,36 @@ export const GisRouteViewer: React.FC = () => {
 
             {/* Route summary badge if live CVRP active */}
             {cvrpRoute && activeScenario === 'multistop' && !cvrpError && (
-              <div className="text-xs text-cyan-300 bg-cyan-950/40 border border-cyan-500/30 px-3 py-1 rounded-xl flex items-center gap-2 font-mono">
+              <div className="text-xs text-cyan-600 dark:text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 px-3 py-1.5 rounded-xl flex items-center gap-2 font-mono">
                 <span>Route: <strong>{cvrpRoute.name}</strong></span>
                 <span>•</span>
                 <span>{cvrpRoute.totalDistanceKm} km</span>
                 <span>•</span>
-                <span className="text-cyan-400">{cvrpRoute.estimatedEmissionsKgCO2e} kg CO₂e</span>
+                <span className="text-cyan-500 dark:text-cyan-400 font-bold">{cvrpRoute.estimatedEmissionsKgCO2e} kg CO₂e</span>
               </div>
             )}
           </div>
 
           {/* Generator Stops Multi-Select Chips */}
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
-            <span className="text-slate-400 font-medium mr-1">Select Pickup Stops:</span>
+            <span className="text-[var(--text-secondary)] font-medium mr-1">Select Pickup Stops:</span>
             {liveGenerators.map((g) => {
               const isSelected = selectedCvrpGenerators.includes(g.id);
               return (
                 <button
                   key={g.id}
                   type="button"
+                  aria-pressed={isSelected}
+                  aria-label={`Toggle pickup stop ${g.name}, volume ${g.availableWasteVolume} tons ${g.wasteType}`}
                   onClick={() => {
                     setSelectedCvrpGenerators((prev) =>
                       isSelected ? prev.filter((id) => id !== g.id) : [...prev, g.id]
                     );
                   }}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all flex items-center gap-1 ${
+                  className={`px-3 py-1 rounded-lg text-xs font-medium border transition-all flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
                     isSelected
-                      ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300'
-                      : 'bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-600'
+                      ? 'bg-cyan-500/20 border-cyan-500 text-cyan-700 dark:text-cyan-300 font-semibold'
+                      : 'bg-[var(--bg-card-subtle)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-color-hover)]'
                   }`}
                   title={`${g.name} (${g.availableWasteVolume}t ${g.wasteType})`}
                 >

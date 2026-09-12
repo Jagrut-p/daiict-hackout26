@@ -302,14 +302,24 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
 
   return (
     <div className="w-full space-y-8">
-      {/* Header & Controls Strip */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+      {/* Header & Controls Strip with Visual Continuity */}
+      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-xl relative overflow-hidden group">
+        {/* Specular Shimmer Accent Line & Light Halo */}
+        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-indigo-400/40 to-transparent" />
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 relative z-10">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-400/25 flex items-center justify-center text-indigo-400 shadow-md">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-400/25 flex items-center justify-center text-indigo-400 shadow-md shrink-0">
               <FileSpreadsheet size={24} />
             </div>
             <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-400/25 text-indigo-600 dark:text-indigo-300 text-[10px] font-mono font-semibold uppercase tracking-wider mb-1.5">
+                <Sparkles size={11} />
+                <span>Cryptographic Manifest Ledger</span>
+                <span className="w-1 h-1 rounded-full bg-indigo-400" />
+                <span>Immutable Traceability</span>
+              </div>
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h3 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
                   Shipment Audit Ledger
@@ -333,7 +343,8 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
               type="button"
               onClick={fetchLiveShipments}
               disabled={isLoadingBackend}
-              className="px-3.5 py-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 text-sky-500 dark:text-sky-200 text-xs font-semibold transition-all flex items-center gap-2 border border-sky-400/30 disabled:opacity-50"
+              aria-label="Synchronize shipments with FastAPI backend"
+              className="px-3.5 py-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 text-sky-600 dark:text-sky-200 text-xs font-semibold transition-all flex items-center gap-2 border border-sky-400/30 disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
               title="Sync with FastAPI backend"
             >
               <RefreshCw size={13} className={isLoadingBackend ? 'animate-spin' : ''} />
@@ -343,7 +354,8 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
             <button
               type="button"
               onClick={handleAddNewRecord}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-xs font-semibold transition-all flex items-center gap-2 shadow-md shadow-indigo-500/25"
+              aria-label="Add a new mock shipment record"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-xs font-semibold transition-all flex items-center gap-2 shadow-md shadow-indigo-500/25 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
               title="Add a new mock shipment record"
             >
               <Plus size={14} />
@@ -353,7 +365,8 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
             <button
               type="button"
               onClick={handleResetData}
-              className="px-3.5 py-2 rounded-xl bg-slate-500/[0.08] hover:bg-slate-500/[0.14] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-semibold border border-[var(--border-color)] transition-all flex items-center gap-2"
+              aria-label="Reset sample ledger records"
+              className="px-3.5 py-2 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-semibold border border-[var(--border-color)] transition-all flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
               title="Reset sample records"
             >
               <RotateCcw size={13} />
@@ -472,10 +485,10 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
                     <tr
                       key={tx.id}
                       onClick={() => onSelectShipment && onSelectShipment(tx.id)}
-                      className="hover:bg-slate-800/40 even:bg-slate-900/30 transition-colors cursor-pointer"
+                      className="hover:bg-[var(--bg-card-hover)] even:bg-[var(--bg-card-subtle)] transition-colors cursor-pointer"
                     >
                       {/* Column 1: Timestamp */}
-                      <td className="py-4 px-4 font-mono text-slate-300 whitespace-nowrap">
+                      <td className="py-4 px-4 font-mono text-[var(--text-secondary)] whitespace-nowrap">
                         {formatTimestamp(tx.timestamp)}
                       </td>
 
@@ -483,7 +496,7 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-2">
                           <span
-                            className="font-mono text-cyan-400 font-semibold bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-900/60"
+                            className="font-mono text-cyan-600 dark:text-cyan-400 font-semibold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20"
                             title={tx.id}
                           >
                             {truncateUUID(tx.id)}
@@ -492,10 +505,11 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
                           <button
                             type="button"
                             onClick={(e) => handleCopyUUID(tx.id, e)}
-                            className={`p-1 rounded-lg border transition-all ${
+                            aria-label={isCopied ? `Copied shipment UUID ${tx.id}` : `Copy full shipment UUID ${tx.id} to clipboard`}
+                            className={`p-1.5 rounded-lg border transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
                               isCopied
-                                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm'
-                                : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 border-slate-700'
+                                ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/40 shadow-sm'
+                                : 'bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] border-[var(--border-color)]'
                             }`}
                             title={isCopied ? 'Copied full UUID!' : 'Copy full UUID to clipboard'}
                           >
@@ -641,12 +655,13 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
 
       {/* MRV Proof Modal */}
       {selectedCert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-4xl bg-slate-900 border border-slate-700 rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in" role="dialog" aria-modal="true" aria-label="MRV Proof Certificate">
+          <div className="relative w-full max-w-4xl bg-[var(--bg-card)] border border-[var(--border-color)] rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <button
               type="button"
               onClick={() => setSelectedCert(null)}
-              className="absolute top-4 right-4 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all z-10"
+              aria-label="Close MRV Certificate modal"
+              className="absolute top-4 right-4 p-2.5 rounded-xl bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] transition-all z-10 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
               title="Close MRV Certificate"
             >
               <X size={18} />

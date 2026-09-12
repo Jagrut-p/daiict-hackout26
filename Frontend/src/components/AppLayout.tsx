@@ -151,47 +151,47 @@ export interface PersonaStyleConfig {
 export const PERSONA_STYLES: Record<PersonaType, PersonaStyleConfig> = {
   generator: {
     gradient: 'from-teal-500 to-cyan-500',
-    borderGlow: 'border-teal-400/30',
-    textAccent: 'text-teal-600 dark:text-teal-300',
+    borderGlow: 'border-teal-500/30',
+    textAccent: 'text-teal-600 dark:text-teal-400',
     bgSubtle: 'bg-teal-500/15',
-    activeTabBg: 'bg-teal-500/[0.12]',
-    activeTabBorder: 'border-teal-400/30',
+    activeTabBg: 'bg-teal-500/10',
+    activeTabBorder: 'border-teal-500/30',
     shadow: 'shadow-teal-500/25',
   },
   logistics: {
     gradient: 'from-sky-500 to-blue-500',
-    borderGlow: 'border-sky-400/30',
-    textAccent: 'text-sky-600 dark:text-sky-300',
+    borderGlow: 'border-sky-500/30',
+    textAccent: 'text-sky-600 dark:text-sky-400',
     bgSubtle: 'bg-sky-500/15',
-    activeTabBg: 'bg-sky-500/[0.12]',
-    activeTabBorder: 'border-sky-400/30',
+    activeTabBg: 'bg-sky-500/10',
+    activeTabBorder: 'border-sky-500/30',
     shadow: 'shadow-sky-500/25',
   },
   facility: {
     gradient: 'from-amber-500 to-orange-500',
-    borderGlow: 'border-amber-400/30',
-    textAccent: 'text-amber-600 dark:text-amber-300',
+    borderGlow: 'border-amber-500/30',
+    textAccent: 'text-amber-600 dark:text-amber-400',
     bgSubtle: 'bg-amber-500/15',
-    activeTabBg: 'bg-amber-500/[0.12]',
-    activeTabBorder: 'border-amber-400/30',
+    activeTabBg: 'bg-amber-500/10',
+    activeTabBorder: 'border-amber-500/30',
     shadow: 'shadow-amber-500/25',
   },
   executive: {
     gradient: 'from-violet-500 to-purple-500',
-    borderGlow: 'border-violet-400/30',
-    textAccent: 'text-violet-600 dark:text-violet-300',
+    borderGlow: 'border-violet-500/30',
+    textAccent: 'text-violet-600 dark:text-violet-400',
     bgSubtle: 'bg-violet-500/15',
-    activeTabBg: 'bg-violet-500/[0.12]',
-    activeTabBorder: 'border-violet-400/30',
+    activeTabBg: 'bg-violet-500/10',
+    activeTabBorder: 'border-violet-500/30',
     shadow: 'shadow-violet-500/25',
   },
   all: {
-    gradient: 'from-indigo-400 via-violet-400 to-fuchsia-400',
-    borderGlow: 'border-indigo-400/30',
-    textAccent: 'text-indigo-600 dark:text-indigo-300',
+    gradient: 'from-indigo-500 via-violet-500 to-fuchsia-500',
+    borderGlow: 'border-indigo-500/30',
+    textAccent: 'text-indigo-600 dark:text-indigo-400',
     bgSubtle: 'bg-indigo-500/15',
-    activeTabBg: 'bg-indigo-500/[0.12]',
-    activeTabBorder: 'border-indigo-400/30',
+    activeTabBg: 'bg-indigo-500/10',
+    activeTabBorder: 'border-indigo-500/30',
     shadow: 'shadow-indigo-500/25',
   },
 };
@@ -279,7 +279,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 <h1 className="brand-logo-text text-base sm:text-lg font-extrabold tracking-tight bg-gradient-to-r from-[var(--text-primary)] via-indigo-400 to-violet-500 bg-clip-text text-transparent group-hover:brightness-110 transition-all">
                   CarbonRoute
                 </h1>
-                <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-indigo-500/10 text-indigo-400 dark:text-indigo-300 border border-indigo-400/20">
+                <span className={`hidden sm:inline-block px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-gradient-to-r ${currentPersonaStyle.gradient} text-white shadow-sm`}>
                   MRV
                 </span>
               </div>
@@ -332,26 +332,22 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               aria-label={`FastAPI Backend status: ${isBackendOnline ? 'Online' : 'Offline'}${latencyMs !== null ? `, ${latencyMs} milliseconds latency` : ''}. Press to test backend connection.`}
               onClick={() => checkHealth()}
               title={`FastAPI Backend: http://127.0.0.1:8000 ${latencyMs !== null ? `(${latencyMs}ms)` : ''} — Click to re-ping`}
-              className={`cursor-pointer hidden md:flex items-center gap-2 px-3.5 py-2 rounded-full border text-xs font-medium transition-all duration-300 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
-                isBackendOnline
-                  ? 'bg-sky-500/[0.07] border-sky-400/20 text-sky-400 dark:text-sky-300 hover:bg-sky-500/[0.12]'
-                  : 'bg-rose-500/[0.07] border-rose-400/20 text-rose-500 dark:text-rose-300 hover:bg-rose-500/[0.12]'
-              }`}
+              className="cursor-pointer hidden md:flex items-center gap-2 px-3.5 py-2 rounded-full border border-[var(--border-color)] bg-[var(--bg-card-subtle)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] text-xs font-medium transition-all duration-300 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"
             >
-              <Server size={11} className={isBackendOnline ? 'text-sky-400' : 'text-rose-400'} />
+              <Server size={11} className={isBackendOnline ? 'text-emerald-500' : 'text-rose-500'} />
               <span className="relative flex h-1.5 w-1.5">
                 <span
                   className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 ${
-                    isBackendOnline ? 'bg-sky-400' : 'bg-rose-400'
+                    isBackendOnline ? 'bg-emerald-400' : 'bg-rose-400'
                   }`}
                 />
                 <span
                   className={`relative inline-flex rounded-full h-1.5 w-1.5 ${
-                    isBackendOnline ? 'bg-sky-400' : 'bg-rose-400'
+                    isBackendOnline ? 'bg-emerald-500' : 'bg-rose-500'
                   }`}
                 />
               </span>
-              <span className="font-mono tracking-wider">
+              <span className="font-mono tracking-wider text-[var(--text-secondary)]">
                 {isBackendOnline ? `API Connected${latencyMs !== null ? ` (${latencyMs}ms)` : ''}` : 'API Offline'}
               </span>
             </button>
@@ -360,25 +356,21 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             <div
               role="status"
               aria-label={`Network status: ${isOnline ? 'Online' : 'Offline'}`}
-              className={`hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-full border text-xs font-medium transition-all duration-300 ${
-                isOnline
-                  ? 'bg-teal-500/[0.07] border-teal-400/20 text-teal-600 dark:text-teal-300/90'
-                  : 'bg-amber-500/[0.07] border-amber-400/20 text-amber-600 dark:text-amber-300/90'
-              }`}
+              className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-full border border-[var(--border-color)] bg-[var(--bg-card-subtle)] text-[var(--text-primary)] text-xs font-medium transition-all duration-300"
             >
               <span className="relative flex h-1.5 w-1.5">
                 <span
                   className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 ${
-                    isOnline ? 'bg-teal-400' : 'bg-amber-400'
+                    isOnline ? 'bg-emerald-400' : 'bg-amber-400'
                   }`}
                 />
                 <span
                   className={`relative inline-flex rounded-full h-1.5 w-1.5 ${
-                    isOnline ? 'bg-teal-400' : 'bg-amber-400'
+                    isOnline ? 'bg-emerald-500' : 'bg-amber-500'
                   }`}
                 />
               </span>
-              <span className="font-mono tracking-wider">
+              <span className="font-mono tracking-wider text-[var(--text-secondary)]">
                 {isOnline ? 'Online' : `Offline ${isSimulatedOffline ? '(Sim)' : ''}`}
               </span>
             </div>

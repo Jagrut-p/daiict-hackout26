@@ -20,7 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from database import init_db, test_connection
+from database import init_db
 from db_store import ORMDictStore
 import models
 
@@ -422,12 +422,10 @@ class RouteOptimizeIn(BaseModel):
 
 @app.get("/health")
 def health_check():
-    db_status = test_connection()
     return {
         "status": "online",
         "system": "Waste-to-Carbon Value Chain Tracker",
         "version": "2.1.0",
-        "database": db_status,
         "ortools_available": ORTOOLS_AVAILABLE,
         "stats": {
             "generators_count": len(GENERATORS),
