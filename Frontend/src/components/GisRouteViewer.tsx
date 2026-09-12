@@ -9,6 +9,7 @@ import {
   Leaf,
   Navigation,
   Zap,
+  AlertTriangle,
 } from 'lucide-react';
 import { apiService, FacilityMatchResponse } from '../services/apiService';
 
@@ -148,16 +149,26 @@ export const GisRouteViewer: React.FC = () => {
   const [isMatching, setIsMatching] = useState<boolean>(false);
   const [cvrpRoute, setCvrpRoute] = useState<WasteRouteDetail | null>(null);
   const [isOptimizingCvrp, setIsOptimizingCvrp] = useState<boolean>(false);
+  const [selectedCvrpGenerators, setSelectedCvrpGenerators] = useState<string[]>([
+    'GEN-GJ-01',
+    'GEN-GJ-02',
+    'GEN-GJ-03',
+  ]);
+  const [selectedCvrpFacilityId, setSelectedCvrpFacilityId] = useState<string>('FAC-BIOCHAR-01');
+  const [cvrpError, setCvrpError] = useState<string | null>(null);
 
   const handleRunCvrpOptimization = async () => {
+    if (selectedCvrpGenerators.length === 0) {
+      setCvrpError('Please select at least one generator pickup stop.');
+      return;
+    }
     setIsOptimizingCvrp(true);
+    setCvrpError(null);
     try {
-      const genIds = liveGenerators.slice(0, 3).map((g) => g.id);
-      const facId = liveFacilities[0]?.id || 'FAC-BIOGAS-02';
       const res = await apiService.optimizeRoute({
-        generator_ids: genIds,
-        facility_id: facId,
-        vehicle_capacity_tons: 10.0,
+        generator_ids: selectedCvrpGenerators,
+        facility_id: selectedCvrpFacilityId,
+        vehicle_capacity_tons: 25.0,
       });
 
       if (res && res.ordered_route) {
@@ -170,8 +181,16 @@ export const GisRouteViewer: React.FC = () => {
             coords.push([s.lat, s.lng]);
           }
         });
-        if (res.facility) {
-          coords.push([res.facility.lat, res.facility.lng]);
+        // The ordered_route already concludes with the destination facility drop-off.
+        // Only append res.facility if it is not already the final coordinate.
+        if (res.facility && coords.length > 0) {
+          const lastCoord = coords[coords.length - 1];
+          const isSameAsFacility =
+            Math.abs(lastCoord[0] - res.facility.lat) < 0.0001 &&
+            Math.abs(lastCoord[1] - res.facility.lng) < 0.0001;
+          if (!isSameAsFacility) {
+            coords.push([res.facility.lat, res.facility.lng]);
+          }
         }
 
         setCvrpRoute({
@@ -183,9 +202,17 @@ export const GisRouteViewer: React.FC = () => {
           coordinates: coords.length > 0 ? coords : SAMPLE_ROUTES[0].coordinates,
         });
         setActiveScenario('multistop');
+      } else {
+        throw new Error('Optimizer returned an empty route.');
       }
-    } catch {
-      setActiveScenario('multistop');
+    } catch (err: unknown) {
+      const errorMsg =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'object' && err !== null && 'message' in err
+          ? String((err as { message: unknown }).message)
+          : 'Failed to optimize CVRP route. Please check backend connection and vehicle capacity.';
+      setCvrpError(errorMsg);
     } finally {
       setIsOptimizingCvrp(false);
     }
@@ -225,6 +252,9 @@ export const GisRouteViewer: React.FC = () => {
             address: f.address || 'Gujarat',
           }));
           setLiveFacilities(convertedFacs);
+          if (!facs.some((f) => f.id === selectedCvrpFacilityId)) {
+            setSelectedCvrpFacilityId(facs[0].id);
+          }
         }
       } catch {
         // Use default mock GIS data if backend offline
@@ -430,6 +460,104 @@ export const GisRouteViewer: React.FC = () => {
               <span>{matchResult.optimal_facility.distance_km} km</span>
               <span>•</span>
               <span className="text-emerald-400">+{matchResult.optimal_facility.net_carbon_benefit_tCO2e} tCO₂e net</span>
+            </div>
+          )}
+        </div>
+
+        {/* Real-Time CVRP Multi-Stop Optimizer Controls */}
+        <div className="mt-3 pt-3 border-t border-slate-800 space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-slate-300 font-semibold flex items-center gap-1">
+                <RouteIcon size={13} className="text-cyan-400" />
+                OR-Tools CVRP Optimizer:
+              </span>
+
+              {/* Destination Facility Dropdown */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-slate-400">Drop-off:</span>
+                <select
+                  value={selectedCvrpFacilityId}
+                  onChange={(e) => setSelectedCvrpFacilityId(e.target.value)}
+                  className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-medium focus:outline-none focus:border-cyan-400"
+                >
+                  {liveFacilities.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name || f.id} ({f.technology || 'Facility'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleRunCvrpOptimization}
+                disabled={isOptimizingCvrp || selectedCvrpGenerators.length === 0}
+                className="px-3 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-all flex items-center gap-1 shadow-sm disabled:opacity-50"
+              >
+                <RouteIcon size={12} className={isOptimizingCvrp ? 'animate-spin' : ''} />
+                <span>{isOptimizingCvrp ? 'Solving CVRP Route...' : 'Run CVRP Optimizer'}</span>
+              </button>
+            </div>
+
+            {/* Route summary badge if live CVRP active */}
+            {cvrpRoute && activeScenario === 'multistop' && !cvrpError && (
+              <div className="text-xs text-cyan-300 bg-cyan-950/40 border border-cyan-500/30 px-3 py-1 rounded-xl flex items-center gap-2 font-mono">
+                <span>Route: <strong>{cvrpRoute.name}</strong></span>
+                <span>•</span>
+                <span>{cvrpRoute.totalDistanceKm} km</span>
+                <span>•</span>
+                <span className="text-cyan-400">{cvrpRoute.estimatedEmissionsKgCO2e} kg CO₂e</span>
+              </div>
+            )}
+          </div>
+
+          {/* Generator Stops Multi-Select Chips */}
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="text-slate-400 font-medium mr-1">Select Pickup Stops:</span>
+            {liveGenerators.map((g) => {
+              const isSelected = selectedCvrpGenerators.includes(g.id);
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCvrpGenerators((prev) =>
+                      isSelected ? prev.filter((id) => id !== g.id) : [...prev, g.id]
+                    );
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all flex items-center gap-1 ${
+                    isSelected
+                      ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300'
+                      : 'bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-600'
+                  }`}
+                  title={`${g.name} (${g.availableWasteVolume}t ${g.wasteType})`}
+                >
+                  <span>{isSelected ? '☑' : '☐'}</span>
+                  <span>{g.name || g.id}</span>
+                  <span className="text-slate-500">({g.availableWasteVolume}t)</span>
+                </button>
+              );
+            })}
+            {selectedCvrpGenerators.length === 0 && (
+              <span className="text-amber-400 text-xs italic">Select at least 1 generator stop to optimize route</span>
+            )}
+          </div>
+
+          {/* CVRP Error Display */}
+          {cvrpError && (
+            <div className="p-2.5 rounded-xl bg-red-950/40 border border-red-500/40 text-xs text-red-300 flex items-start gap-2">
+              <AlertTriangle size={15} className="text-red-400 mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <span className="font-semibold">CVRP Optimization Error:</span> {cvrpError}
+              </div>
+              <button
+                type="button"
+                onClick={() => setCvrpError(null)}
+                className="text-red-400 hover:text-red-200 text-xs font-bold px-1"
+              >
+                Dismiss
+              </button>
             </div>
           )}
         </div>

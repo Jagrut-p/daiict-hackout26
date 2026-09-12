@@ -285,7 +285,18 @@ class ApiService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error(`Route optimization failed (${res.status})`);
+    if (!res.ok) {
+      let message = `Route optimization failed (${res.status})`;
+      try {
+        const errorData = await res.json();
+        if (errorData?.detail) {
+          message = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
+        }
+      } catch {
+        // Use default message
+      }
+      throw new Error(message);
+    }
     return await res.json();
   }
 }
