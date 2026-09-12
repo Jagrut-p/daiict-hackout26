@@ -170,6 +170,18 @@ export function setupFetchInterceptor(): void {
     const urlString = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
 
     if (urlString.includes('/shipments/sync')) {
+      const mode = mockServer.getMode();
+      if (mode === 'auto') {
+        try {
+          const realRes = await originalFetch(input, init);
+          if (realRes.ok || realRes.status === 409) {
+            return realRes;
+          }
+        } catch {
+          // If real backend is unreachable/offline, fallback to in-memory mock
+        }
+      }
+
       try {
         let payload: WasteShipment;
         if (init?.body) {

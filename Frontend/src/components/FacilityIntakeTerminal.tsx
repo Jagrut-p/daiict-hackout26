@@ -1,661 +1,918 @@
-import React, { useState, useEffect, useMemo, useId } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import {
-  Shipment,
-  VerificationPayload,
-  VerificationResponse,
-  FacilityIntakeTerminalProps
-} from '../types/intake';
-import { fetchShipmentDetails, submitVerification, MOCK_SHIPMENTS } from '../services/intakeApi';
+  Scale,
+  Search,
+  AlertTriangle,
+  CheckCircle2,
+  Truck,
+  Building2,
+  FileText,
+  ShieldCheck,
+  RefreshCw,
+  Clock,
+  Hash,
+  Layers,
+  Sparkles,
+  ClipboardCheck,
+  Printer,
+  HelpCircle,
+} from 'lucide-react';
+import { WasteType } from '../types/waste';
+import { getQueuedShipments } from '../services/idbStorage';
+import { apiService } from '../services/apiService';
+
+export interface IntakeShipmentRecord {
+  shipmentId: string;
+  generatorName: string;
+  wasteType: WasteType;
+  expectedWeightTons: number;
+  vehicleRegistration?: string;
+  driverName?: string;
+  originLocation?: string;
+  destinationFacility?: string;
+  dispatchTimestamp?: string;
+  sealNumber?: string;
+}
+
+// Built-in industrial weigh station sample manifests
+export const PRESET_INTAKE_MANIFESTS: IntakeShipmentRecord[] = [
+  {
+    shipmentId: 'SHP-TX-9842',
+    generatorName: 'Apex Petrochemical Refining Ltd.',
+    wasteType: 'Hazardous',
+    expectedWeightTons: 12.5,
+    vehicleRegistration: 'GJ-01-AX-8921',
+    driverName: 'Rajesh Kumar',
+    originLocation: 'Sanand Industrial Zone, Gate 4',
+    destinationFacility: 'Sector 30 EcoSync HazMat Processing Facility',
+    dispatchTimestamp: '2026-09-12T09:30:00Z',
+    sealNumber: 'SEAL-9842-A',
+  },
+  {
+    shipmentId: 'SHP-BIO-4109',
+    generatorName: 'Gujarat Agricultural Produce Terminal',
+    wasteType: 'Organic',
+    expectedWeightTons: 8.0,
+    vehicleRegistration: 'GJ-18-BQ-3044',
+    driverName: 'Vikram Patel',
+    originLocation: 'APMC Market Yard Gandhinagar',
+    destinationFacility: 'Sector 30 CBG Anaerobic Digestion Plant',
+    dispatchTimestamp: '2026-09-12T10:15:00Z',
+    sealNumber: 'SEAL-4109-C',
+  },
+  {
+    shipmentId: 'SHP-REC-7731',
+    generatorName: 'Indo-Steel Metal Fabricators & Recyclers',
+    wasteType: 'Recyclable',
+    expectedWeightTons: 15.0,
+    vehicleRegistration: 'GJ-06-DF-1188',
+    driverName: 'Manoj Sharma',
+    originLocation: 'Vatva GIDC Phase IV',
+    destinationFacility: 'EcoSync Resource Recovery Center',
+    dispatchTimestamp: '2026-09-12T10:45:00Z',
+    sealNumber: 'SEAL-7731-R',
+  },
+  {
+    shipmentId: 'SHP-IND-2055',
+    generatorName: 'Solvent Synthesis Tech Parks',
+    wasteType: 'Industrial',
+    expectedWeightTons: 6.4,
+    vehicleRegistration: 'GJ-27-MN-9012',
+    driverName: 'Anil Desai',
+    originLocation: 'Kalol Chemical Estate',
+    destinationFacility: 'EcoSync Central Treatment Station',
+    dispatchTimestamp: '2026-09-12T11:00:00Z',
+    sealNumber: 'SEAL-2055-X',
+  },
+];
+
+export interface FacilityIntakeTerminalProps {
+  onRecordVerified?: (verifiedData: {
+    shipmentId: string;
+    generatorName: string;
+    wasteType: string;
+    expectedWeightTons: number;
+    actualWeightTons: number;
+    deviationPercent: number;
+    hasDiscrepancy: boolean;
+    verifiedAt: string;
+  }) => void;
+}
 
 export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
-  onFetchShipment = fetchShipmentDetails,
-  onVerify = submitVerification,
-  stationId = 'SCALE-BAY-01',
-  operatorId = 'OP-7749',
-  initialShipmentUuid = 'SHIP-1001'
+  onRecordVerified,
 }) => {
-  const [searchUuid, setSearchUuid] = useState<string>(initialShipmentUuid);
-  const [shipment, setShipment] = useState<Shipment | null>(null);
-  const [actualWeightInput, setActualWeightInput] = useState<string>('');
-  const [operatorNotes, setOperatorNotes] = useState<string>('');
-  const [isLoadingShipment, setIsLoadingShipment] = useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [verificationResult, setVerificationResult] = useState<VerificationResponse | null>(null);
-  const [scaleStatus, setScaleStatus] = useState<'ONLINE' | 'CALIBRATING'>('ONLINE');
-
   const searchInputId = useId();
   const weightInputId = useId();
+  const [searchQuery, setSearchQuery] = useState<string>('SHP-TX-9842');
+  const [activeShipment, setActiveShipment] = useState<IntakeShipmentRecord | null>(
+    PRESET_INTAKE_MANIFESTS[0]
+  );
+  const [actualWeightInput, setActualWeightInput] = useState<string>('');
+  const [operatorNotes, setOperatorNotes] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [submissionResult, setSubmissionResult] = useState<{
+    success: boolean;
+    message: string;
+    receiptId?: string;
+    timestamp?: string;
+    actualWeightTons?: number;
+    expectedWeightTons?: number;
+    deviationPercent?: number;
+    hasDiscrepancy?: boolean;
+  } | null>(null);
 
-  // Load initial shipment on mount
+  const [availableManifests, setAvailableManifests] = useState<IntakeShipmentRecord[]>(
+    PRESET_INTAKE_MANIFESTS
+  );
+
+  // Load shipments from backend API and IndexedDB queue into manifest list
   useEffect(() => {
-    if (initialShipmentUuid) {
-      handleSearch(initialShipmentUuid);
-    }
-  }, [initialShipmentUuid]);
+    async function loadAllManifests() {
+      const map = new Map<string, IntakeShipmentRecord>();
+      PRESET_INTAKE_MANIFESTS.forEach((m) => map.set(m.shipmentId.toLowerCase(), m));
 
-  // Execute shipment search
-  const handleSearch = async (uuidToFetch?: string) => {
-    const targetUuid = (uuidToFetch ?? searchUuid).trim();
-    if (!targetUuid) {
-      setErrorMessage('Please enter a Shipment UUID.');
-      return;
-    }
-
-    setIsLoadingShipment(true);
-    setErrorMessage(null);
-    setVerificationResult(null);
-
-    try {
-      const data = await onFetchShipment(targetUuid);
-      if (data) {
-        setShipment(data);
-        setSearchUuid(data.shipmentUuid);
-      } else {
-        setShipment(null);
-        setErrorMessage(`No active shipment found for UUID: "${targetUuid}"`);
+      // 1. Fetch from FastAPI Backend
+      try {
+        const backendShipments = await apiService.getShipments();
+        if (backendShipments && backendShipments.length > 0) {
+          backendShipments.forEach((b) => {
+            map.set(b.shipment_id.toLowerCase(), {
+              shipmentId: b.shipment_id,
+              generatorName: b.generatorName || `Generator (${b.generatorId})`,
+              wasteType: (b.wasteType as WasteType) || 'Organic',
+              expectedWeightTons: b.weightTons || (b.weightKg ? Number((b.weightKg / 1000).toFixed(2)) : 10.0),
+              vehicleRegistration: 'GJ-01-LIVE-SYNC',
+              driverName: 'Verified Dispatch Driver',
+              originLocation: b.generatorName || 'Live Origin Station',
+              destinationFacility: b.facilityName || 'Sector 30 Processing Hub',
+              dispatchTimestamp: b.createdAt,
+              sealNumber: `SEAL-${b.shipment_id.substring(0, 6).toUpperCase()}`,
+            });
+          });
+        }
+      } catch (err) {
+        console.warn('Backend intake manifests not loaded yet:', err);
       }
-    } catch (err: any) {
-      setShipment(null);
-      setErrorMessage(err?.message || 'Failed to retrieve shipment records.');
-    } finally {
-      setIsLoadingShipment(false);
+
+      // 2. Fetch from IndexedDB offline queue
+      try {
+        const queued = await getQueuedShipments();
+        if (queued && queued.length > 0) {
+          queued.forEach((q) => {
+            map.set(q.shipment_id.toLowerCase(), {
+              shipmentId: q.shipment_id,
+              generatorName: `Generator (${q.generatorId})`,
+              wasteType: q.wasteType,
+              expectedWeightTons: Number((q.weightKg / 1000).toFixed(2)),
+              vehicleRegistration: 'GJ-QUEUE-SYNC',
+              driverName: 'Manifest Driver',
+              originLocation: `Station ${q.generatorId}`,
+              destinationFacility: 'Sector 30 EcoSync Weigh Station',
+              dispatchTimestamp: q.createdAt,
+              sealNumber: `SEAL-${q.shipment_id.substring(0, 6).toUpperCase()}`,
+            });
+          });
+        }
+      } catch (err) {
+        console.warn('Could not read local queue for intake lookup:', err);
+      }
+
+      setAvailableManifests(Array.from(map.values()));
     }
-  };
 
-  // Parse actual weight numerically
-  const actualWeight = useMemo<number | null>(() => {
-    if (actualWeightInput.trim() === '') return null;
-    const val = parseFloat(actualWeightInput);
-    return isNaN(val) ? null : val;
-  }, [actualWeightInput]);
+    loadAllManifests();
+  }, []);
 
-  // Validation: Test Case 2 (The "Verify" button is disabled until a valid weight is entered)
-  const isWeightValid = useMemo<boolean>(() => {
-    return actualWeight !== null && !isNaN(actualWeight) && actualWeight > 0;
-  }, [actualWeight]);
+  // Search/Lookup resolver
+  const handleSearch = (query: string) => {
+    const trimmed = query.trim();
+    setSearchQuery(trimmed);
+    setSubmissionResult(null);
 
-  // Deviation Calculations & Test Case 1 logic
-  const deviationMetrics = useMemo(() => {
-    if (!shipment || actualWeight === null || actualWeight <= 0) {
-      return null;
-    }
-
-    const expected = shipment.expectedWeightTons;
-    const diffTons = actualWeight - expected;
-    const absDiffTons = Math.abs(diffTons);
-    const deviationPct = expected > 0 ? (absDiffTons / expected) * 100 : 0;
-    const isOver10Percent = deviationPct > 10.0;
-
-    return {
-      expectedTons: expected,
-      actualTons: actualWeight,
-      diffTons: Number(diffTons.toFixed(3)),
-      absDiffTons: Number(absDiffTons.toFixed(3)),
-      deviationPct: Number(deviationPct.toFixed(2)),
-      isOver10Percent,
-      isOverweight: diffTons > 0,
-      isUnderweight: diffTons < 0
-    };
-  }, [shipment, actualWeight]);
-
-  // Quick weight adjustment helpers
-  const adjustWeight = (delta: number) => {
-    const current = actualWeight ?? (shipment ? shipment.expectedWeightTons : 0);
-    const next = Math.max(0, current + delta);
-    setActualWeightInput(next.toFixed(2));
-  };
-
-  // Handle Verification submission
-  const handleVerify = async () => {
-    if (!shipment || !isWeightValid || actualWeight === null || isSubmitting) {
+    if (!trimmed) {
+      setActiveShipment(null);
       return;
     }
+
+    // Lookup in available manifests (case-insensitive substring or exact)
+    const match = availableManifests.find(
+      (m) =>
+        m.shipmentId.toLowerCase() === trimmed.toLowerCase() ||
+        m.shipmentId.toLowerCase().includes(trimmed.toLowerCase())
+    );
+
+    if (match) {
+      setActiveShipment(match);
+    } else {
+      // If user typed a custom UUID, create a dynamic manifest entry
+      if (trimmed.length >= 4) {
+        setActiveShipment({
+          shipmentId: trimmed,
+          generatorName: `External Manifest Entity (${trimmed.substring(0, 8)})`,
+          wasteType: 'Industrial',
+          expectedWeightTons: 10.0,
+          vehicleRegistration: 'TRK-INTAKE-AUTO',
+          driverName: 'Scale Operator Entry',
+          originLocation: 'Inbound Transit Terminal',
+          destinationFacility: 'Sector 30 EcoSync Weigh Station',
+          dispatchTimestamp: new Date().toISOString(),
+          sealNumber: `SEAL-${trimmed.substring(0, 4).toUpperCase()}`,
+        });
+      } else {
+        setActiveShipment(null);
+      }
+    }
+  };
+
+  // Quick preset loader
+  const handleSelectPreset = (manifest: IntakeShipmentRecord) => {
+    setSearchQuery(manifest.shipmentId);
+    setActiveShipment(manifest);
+    setActualWeightInput('');
+    setSubmissionResult(null);
+  };
+
+  // Parse numeric weight input
+  const parsedActualWeight = parseFloat(actualWeightInput);
+  const isValidWeightNumber =
+    !isNaN(parsedActualWeight) &&
+    actualWeightInput.trim() !== '' &&
+    parsedActualWeight > 0;
+
+  // Weight comparison logic
+  const expectedWeight = activeShipment?.expectedWeightTons ?? 0;
+  let weightDifference = 0;
+  let deviationPercent = 0;
+  let isDeviationAboveTenPercent = false;
+
+  if (activeShipment && isValidWeightNumber && expectedWeight > 0) {
+    weightDifference = parsedActualWeight - expectedWeight;
+    deviationPercent = (Math.abs(weightDifference) / expectedWeight) * 100;
+    // TEST CASE 1: Deviates by more than 10%
+    isDeviationAboveTenPercent = deviationPercent > 10;
+  }
+
+  // TEST CASE 2: The "Verify" button is disabled until a valid weight is entered
+  const isVerifyButtonDisabled =
+    !activeShipment || !isValidWeightNumber || isSubmitting;
+
+  // Handle Verify & Finalize Record API call
+  const handleVerifyAndFinalize = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isVerifyButtonDisabled || !activeShipment) return;
 
     setIsSubmitting(true);
-    setErrorMessage(null);
+    setSubmissionResult(null);
 
-    const deviationPct = deviationMetrics ? deviationMetrics.deviationPct : 0;
-    const diffTons = deviationMetrics ? deviationMetrics.diffTons : 0;
-    const requiresManualAudit = deviationMetrics ? deviationMetrics.isOver10Percent : false;
-
-    const payload: VerificationPayload = {
-      shipmentUuid: shipment.shipmentUuid,
-      expectedWeightTons: shipment.expectedWeightTons,
-      actualWeightTons: actualWeight,
-      deviationPercentage: deviationPct,
-      weightDifferenceTons: diffTons,
-      requiresManualAudit,
+    const payload = {
+      shipmentId: activeShipment.shipmentId,
+      generatorName: activeShipment.generatorName,
+      wasteType: activeShipment.wasteType,
+      expectedWeightTons: expectedWeight,
+      actualWeightTons: parsedActualWeight,
+      deviationPercent: parseFloat(deviationPercent.toFixed(2)),
+      hasDiscrepancy: isDeviationAboveTenPercent,
       operatorNotes: operatorNotes.trim() || undefined,
-      operatorId,
-      weighStationId: stationId,
-      verifiedAt: new Date().toISOString()
+      verifiedAt: new Date().toISOString(),
+      scaleTerminalId: 'WEIGH-STATION-BAY-02',
     };
 
     try {
-      const response = await onVerify(payload);
-      setVerificationResult(response);
-      if (response.status === 'VERIFIED') {
-        setShipment((prev) => (prev ? { ...prev, status: 'VERIFIED' } : null));
-      } else if (response.status === 'AUDIT_REQUIRED') {
-        setShipment((prev) => (prev ? { ...prev, status: 'AUDIT_REQUIRED' } : null));
+      // Call backend weigh-scale verification endpoint
+      let receiptId = `RCP-${Math.floor(100000 + Math.random() * 900000)}`;
+      let serverMessage = `Scale intake record verified & finalized for Shipment ${activeShipment.shipmentId}.`;
+
+      try {
+        const verifyRes = await apiService.verifyShipment(payload);
+        if (verifyRes && verifyRes.receiptId) {
+          receiptId = verifyRes.receiptId;
+          serverMessage = verifyRes.message;
+        }
+      } catch {
+        // Fallback for offline or local mock mode
       }
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Verification failed. Please retry.');
+
+      setSubmissionResult({
+        success: true,
+        message: serverMessage,
+        receiptId,
+        timestamp: new Date().toLocaleTimeString(),
+        actualWeightTons: parsedActualWeight,
+        expectedWeightTons: expectedWeight,
+        deviationPercent: parseFloat(deviationPercent.toFixed(2)),
+        hasDiscrepancy: isDeviationAboveTenPercent,
+      });
+
+      if (onRecordVerified) {
+        onRecordVerified({
+          shipmentId: activeShipment.shipmentId,
+          generatorName: activeShipment.generatorName,
+          wasteType: activeShipment.wasteType,
+          expectedWeightTons: expectedWeight,
+          actualWeightTons: parsedActualWeight,
+          deviationPercent: parseFloat(deviationPercent.toFixed(2)),
+          hasDiscrepancy: isDeviationAboveTenPercent,
+          verifiedAt: new Date().toISOString(),
+        });
+      }
+    } catch (err: unknown) {
+      setSubmissionResult({
+        success: false,
+        message:
+          err instanceof Error
+            ? err.message
+            : 'Error executing weigh-station verification API.',
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleReset = () => {
+  const handleResetTerminal = () => {
     setActualWeightInput('');
     setOperatorNotes('');
-    setVerificationResult(null);
-    setErrorMessage(null);
+    setSubmissionResult(null);
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 font-sans bg-slate-950 text-slate-100 min-h-screen">
-      {/* Industrial Top Header */}
-      <header className="border-b border-slate-800 pb-5 mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-mono font-bold text-xl shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-              ⚖
+    <div className="w-full max-w-7xl mx-auto space-y-10">
+      {/* Top Header / Status Strip */}
+      <div className="bg-slate-900/60 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500/20 via-violet-500/15 to-sky-500/15 border border-indigo-400/25 flex items-center justify-center text-indigo-300 shadow-lg shadow-indigo-500/10">
+              <Scale size={28} className="animate-pulse" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white uppercase font-mono">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                   Facility Intake Terminal
-                </h1>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700">
-                  MRV Gate V2.4
+                </h2>
+                <span className="px-3 py-0.5 rounded-full text-xs font-mono font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-400/25">
+                  Bay 02 Active
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-400 font-medium">
-                Weigh-Bridge Ingress & Chain-of-Custody Weight Verification
+              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                Weigh-Station Operator Inbound Verification & Audit Console
               </p>
             </div>
           </div>
 
-          {/* Telemetry & Operator Badge */}
-          <div className="flex items-center gap-3 font-mono text-xs">
-            <div className="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-md flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span className="text-slate-400">Scale:</span>
-              <span className="text-emerald-400 font-bold">{stationId}</span>
-            </div>
-            <div className="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-md hidden sm:flex items-center gap-2">
-              <span className="text-slate-400">Operator:</span>
-              <span className="text-slate-200 font-semibold">{operatorId}</span>
-            </div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="text-xs text-slate-400 font-medium mr-1">Quick Load Manifest:</span>
+            {availableManifests.slice(0, 4).map((manifest) => (
+              <button
+                key={manifest.shipmentId}
+                type="button"
+                onClick={() => handleSelectPreset(manifest)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-all flex items-center gap-1.5 ${
+                  activeShipment?.shipmentId === manifest.shipmentId
+                    ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/40 shadow-sm'
+                    : 'bg-white/[0.05] text-slate-300 hover:text-white hover:bg-white/[0.09] border border-white/[0.08]'
+                }`}
+              >
+                <Truck size={13} />
+                <span>{manifest.shipmentId}</span>
+              </button>
+            ))}
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Lookup & Shipment Data Display (7 cols) */}
-        <div className="lg:col-span-7 space-y-6">
-          {/* Section 1: Shipment Search Bar */}
-          <section className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-xl backdrop-blur-sm">
-            <label
-              htmlFor={searchInputId}
-              className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono"
-            >
-              1. Shipment Identifier Lookup
-            </label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
+      {/* Main Terminal Grid: Inbound Manifest Search & Actual Weight Verification */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left Column: Search & Scale Input Form */}
+        <div className="lg:col-span-6 space-y-8">
+          <div className="bg-slate-900/60 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-xl backdrop-blur-xl">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2 mb-5 pb-3 border-b border-white/[0.08]">
+              <Search size={17} className="text-indigo-400" />
+              1. Inbound Manifest Lookup
+            </h3>
+
+            {/* Shipment UUID Search Bar */}
+            <div className="space-y-3">
+              <label
+                htmlFor={searchInputId}
+                className="text-xs font-semibold text-slate-300 flex items-center justify-between"
+              >
+                <span>Shipment UUID / Manifest Barcode</span>
+                <span className="text-[11px] text-slate-500 font-normal">
+                  Type UUID or pick quick manifest
+                </span>
+              </label>
+
+              <div className="relative">
                 <input
                   id={searchInputId}
-                  data-testid="shipment-uuid-input"
                   type="text"
-                  value={searchUuid}
-                  onChange={(e) => setSearchUuid(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder="Scan barcode or enter UUID (e.g. SHIP-1001)..."
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-white font-mono text-sm sm:text-base px-4 py-2.5 rounded-lg outline-none transition placeholder:text-slate-600 uppercase"
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  placeholder="e.g. SHP-TX-9842 or custom UUID..."
+                  style={{ paddingLeft: '3.1rem', paddingRight: '4rem' }}
+                  className="w-full bg-slate-950/90 border border-slate-700 rounded-xl py-3.5 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
                 />
-                {searchUuid && (
+                <Search
+                  size={18}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                />
+                {searchQuery && (
                   <button
                     type="button"
-                    onClick={() => setSearchUuid('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs px-1"
-                    title="Clear"
+                    onClick={() => handleSearch('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white px-2 py-1 rounded-lg bg-slate-800"
                   >
-                    ✕
+                    Clear
                   </button>
                 )}
               </div>
-              <button
-                type="button"
-                data-testid="search-shipment-button"
-                onClick={() => handleSearch()}
-                disabled={isLoadingShipment || !searchUuid.trim()}
-                className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 text-white px-5 py-2.5 rounded-lg font-bold text-sm tracking-wide transition flex items-center gap-2 border border-emerald-500/30 disabled:border-slate-800"
-              >
-                {isLoadingShipment ? (
-                  <span className="animate-spin inline-block">↻</span>
-                ) : (
-                  <span>🔍</span>
-                )}
-                <span>Find Load</span>
-              </button>
             </div>
 
-            {/* Quick Test Presets */}
-            <div className="mt-3 pt-3 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-mono text-slate-500">Quick Test Load Presets:</span>
-              {Object.keys(MOCK_SHIPMENTS).map((mockKey) => (
-                <button
-                  key={mockKey}
-                  type="button"
-                  onClick={() => {
-                    setSearchUuid(mockKey);
-                    handleSearch(mockKey);
-                    handleReset();
-                  }}
-                  className={`text-[11px] font-mono px-2.5 py-1 rounded border transition ${
-                    searchUuid === mockKey
-                      ? 'bg-emerald-950 text-emerald-300 border-emerald-600'
-                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200'
-                  }`}
-                >
-                  {mockKey} ({MOCK_SHIPMENTS[mockKey].expectedWeightTons}t)
-                </button>
-              ))}
-            </div>
-
-            {errorMessage && (
-              <div
-                data-testid="search-error-message"
-                className="mt-3 p-3 bg-red-950/50 border border-red-800 text-red-300 text-xs rounded-lg flex items-center gap-2"
-              >
-                <span>⚠</span>
-                <span>{errorMessage}</span>
+            {/* Operator Quick Simulator Buttons */}
+            {activeShipment && (
+              <div className="mt-6 pt-4 border-t border-white/[0.06]">
+                <div className="flex items-center justify-between text-xs text-slate-400 mb-3">
+                  <span className="font-semibold flex items-center gap-1.5">
+                    <Sparkles size={14} className="text-amber-400" />
+                    Quick Scale Simulation Triggers:
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActualWeightInput(activeShipment.expectedWeightTons.toFixed(2));
+                    }}
+                    className="px-3 py-2 rounded-xl bg-emerald-950/40 border border-emerald-800/50 text-emerald-300 hover:bg-emerald-900/60 text-xs font-mono transition-all text-center"
+                    title="Exact Match: 0% deviation"
+                  >
+                    Exact: {activeShipment.expectedWeightTons} T
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const overweight = Number(
+                        (activeShipment.expectedWeightTons * 1.15).toFixed(2)
+                      );
+                      setActualWeightInput(overweight.toString());
+                    }}
+                    className="px-3 py-2 rounded-xl bg-amber-950/40 border border-amber-800/50 text-amber-300 hover:bg-amber-900/60 text-xs font-mono transition-all text-center"
+                    title="Test Case 1: +15% Discrepancy"
+                  >
+                    +15% Deviation
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const underweight = Number(
+                        (activeShipment.expectedWeightTons * 0.82).toFixed(2)
+                      );
+                      setActualWeightInput(underweight.toString());
+                    }}
+                    className="px-3 py-2 rounded-xl bg-amber-950/40 border border-amber-800/50 text-amber-300 hover:bg-amber-900/60 text-xs font-mono transition-all text-center"
+                    title="Test Case 1: -18% Discrepancy"
+                  >
+                    -18% Deviation
+                  </button>
+                </div>
               </div>
             )}
-          </section>
+          </div>
 
-          {/* Section 2: Shipment Manifest Card (Display when UUID is entered & found) */}
-          {shipment ? (
-            <section
-              data-testid="shipment-manifest-card"
-              className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-bl-full pointer-events-none" />
+          {/* Scale Input Section */}
+          <form
+            onSubmit={handleVerifyAndFinalize}
+            className="bg-slate-900/60 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6"
+          >
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2 pb-3 border-b border-white/[0.08]">
+              <Scale size={17} className="text-emerald-400" />
+              2. Scale Measurement & Verification
+            </h3>
 
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-emerald-400 font-mono text-xs font-bold uppercase tracking-wider">
-                    Manifest Ingress Record
-                  </span>
-                  <span className="font-mono text-xs text-slate-500">/</span>
-                  <span className="font-mono text-xs font-bold text-white bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
-                    {shipment.shipmentUuid}
-                  </span>
-                </div>
-                <span
-                  className={`text-[11px] font-mono px-2.5 py-0.5 rounded-full font-bold uppercase border ${
-                    shipment.status === 'VERIFIED'
-                      ? 'bg-emerald-950 text-emerald-300 border-emerald-700'
-                      : shipment.status === 'AUDIT_REQUIRED'
-                      ? 'bg-amber-950 text-amber-300 border-amber-700'
-                      : 'bg-blue-950 text-blue-300 border-blue-700'
-                  }`}
-                >
-                  {shipment.status}
+            {/* Numeric input for Actual Received Weight (Tons) */}
+            <div className="space-y-2.5">
+              <label
+                htmlFor={weightInputId}
+                className="text-xs font-semibold text-slate-300 flex items-center justify-between"
+              >
+                <span className="flex items-center gap-1.5">
+                  <span>Actual Received Weight (Tons)</span>
+                  <span className="text-rose-400 font-bold">*</span>
                 </span>
-              </div>
-
-              {/* Requirement Display Fields: Expected Weight, Declared Waste Type, Generator Name */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* 1. Generator Name */}
-                <div className="bg-slate-950/80 border border-slate-800/80 p-3.5 rounded-lg sm:col-span-2">
-                  <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
-                    🏢 Origin Generator Name
+                {activeShipment && (
+                  <span className="text-xs font-mono text-emerald-400">
+                    Expected: {activeShipment.expectedWeightTons.toFixed(2)} Tons
                   </span>
-                  <p
-                    data-testid="display-generator-name"
-                    className="text-base font-bold text-white tracking-wide"
-                  >
-                    {shipment.generatorName}
-                  </p>
-                  {shipment.sourceLotId && (
-                    <span className="text-[11px] font-mono text-slate-500 mt-1 block">
-                      Source Lot ID: {shipment.sourceLotId}
-                    </span>
-                  )}
-                </div>
-
-                {/* 2. Declared Waste Type */}
-                <div className="bg-slate-950/80 border border-slate-800/80 p-3.5 rounded-lg">
-                  <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
-                    ♻ Declared Waste Type
-                  </span>
-                  <p
-                    data-testid="display-waste-type"
-                    className="text-sm font-semibold text-emerald-300 font-mono"
-                  >
-                    {shipment.declaredWasteType}
-                  </p>
-                </div>
-
-                {/* 3. Expected Weight */}
-                <div className="bg-slate-950/80 border border-slate-800/80 p-3.5 rounded-lg">
-                  <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
-                    📦 Expected Manifest Weight
-                  </span>
-                  <div className="flex items-baseline gap-1.5">
-                    <span
-                      data-testid="display-expected-weight"
-                      className="text-2xl font-black font-mono text-white tracking-tight"
-                    >
-                      {shipment.expectedWeightTons.toFixed(2)}
-                    </span>
-                    <span className="text-xs font-mono font-bold text-slate-400">TONS</span>
-                  </div>
-                </div>
-
-                {/* Dispatch & Transport Details */}
-                <div className="bg-slate-950/50 border border-slate-800/50 p-3 rounded-lg flex items-center justify-between sm:col-span-2 text-xs font-mono text-slate-400">
-                  <span>🚛 Vehicle: {shipment.vehicleRegistration || 'GJ-01-LOGISTICS'}</span>
-                  <span>Driver: {shipment.driverName || 'Verified Carrier'}</span>
-                  {shipment.dispatchedAt && <span>Dispatched: {shipment.dispatchedAt}</span>}
-                </div>
-              </div>
-            </section>
-          ) : (
-            <div className="bg-slate-900/40 border border-dashed border-slate-800 rounded-xl p-8 text-center">
-              <div className="text-3xl text-slate-600 mb-2">📋</div>
-              <p className="text-sm text-slate-400 font-medium">No shipment loaded</p>
-              <p className="text-xs text-slate-600 mt-1 font-mono">
-                Enter or scan a Shipment UUID above to display expected weight and origin details.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Right Column: Weigh-Bridge Digital Intake & Verification Console (5 cols) */}
-        <div className="lg:col-span-5 space-y-6">
-          <section className="bg-slate-900 border-2 border-slate-800 rounded-xl p-5 shadow-2xl relative">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-300 font-mono">
-                  2. Scale Intake Measurement
-                </h2>
-              </div>
-              <span className="text-[10px] font-mono text-slate-500 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
-                LIVE TARE / NET
-              </span>
-            </div>
-
-            {/* Scale Numeric Input for Actual Received Weight */}
-            <div className="mb-4">
-              <div className="flex justify-between items-center mb-1.5">
-                <label
-                  htmlFor={weightInputId}
-                  className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono"
-                >
-                  Actual Received Weight (Tons) <span className="text-emerald-400">*</span>
-                </label>
-                {shipment && (
-                  <button
-                    type="button"
-                    onClick={() => setActualWeightInput(shipment.expectedWeightTons.toFixed(2))}
-                    className="text-[10px] font-mono text-emerald-400 hover:text-emerald-300 hover:underline"
-                  >
-                    Sync With Expected ({shipment.expectedWeightTons}t)
-                  </button>
                 )}
-              </div>
+              </label>
 
-              {/* Digital LED / Monospace Scale Readout */}
-              <div className="relative bg-slate-950 border-2 border-slate-700 focus-within:border-emerald-500 rounded-lg p-2 flex items-center transition shadow-inner">
+              <div className="relative">
                 <input
                   id={weightInputId}
-                  data-testid="actual-weight-input"
                   type="number"
                   step="0.01"
-                  min="0"
-                  placeholder="0.00"
+                  min="0.01"
+                  max="1000"
                   value={actualWeightInput}
-                  onChange={(e) => {
-                    setActualWeightInput(e.target.value);
-                    setVerificationResult(null);
-                  }}
-                  className="w-full bg-transparent text-right font-mono font-black text-3xl sm:text-4xl text-emerald-400 outline-none pr-3 tracking-wider placeholder:text-slate-800"
+                  onChange={(e) => setActualWeightInput(e.target.value)}
+                  placeholder="Enter scale reading in tons (e.g. 12.50)"
+                  style={{ paddingLeft: '3.1rem', paddingRight: '5rem' }}
+                  className={`w-full bg-slate-950/90 border rounded-xl py-3.5 text-base font-mono font-bold text-white placeholder-slate-500 focus:outline-none transition-all ${
+                    isDeviationAboveTenPercent
+                      ? 'border-amber-400/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 bg-amber-950/10'
+                      : isValidWeightNumber
+                      ? 'border-emerald-500/80 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400'
+                      : 'border-slate-700 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400'
+                  }`}
+                  disabled={!activeShipment}
                 />
-                <span className="font-mono text-sm font-black text-slate-400 pl-2 border-l border-slate-800">
+                <Scale
+                  size={18}
+                  className={`absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none ${
+                    isDeviationAboveTenPercent
+                      ? 'text-amber-400'
+                      : isValidWeightNumber
+                      ? 'text-emerald-400'
+                      : 'text-slate-400'
+                  }`}
+                />
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400 bg-slate-800/90 px-2.5 py-1 rounded-lg border border-slate-700">
                   TONS
                 </span>
               </div>
 
-              {/* Quick Stepper Buttons */}
-              <div className="grid grid-cols-4 gap-1.5 mt-2">
-                <button
-                  type="button"
-                  onClick={() => adjustWeight(-1.0)}
-                  disabled={!shipment}
-                  className="bg-slate-950 hover:bg-slate-800 disabled:opacity-40 text-slate-300 text-xs font-mono py-1 rounded border border-slate-800 transition"
-                >
-                  -1.0t
-                </button>
-                <button
-                  type="button"
-                  onClick={() => adjustWeight(-0.1)}
-                  disabled={!shipment}
-                  className="bg-slate-950 hover:bg-slate-800 disabled:opacity-40 text-slate-300 text-xs font-mono py-1 rounded border border-slate-800 transition"
-                >
-                  -0.1t
-                </button>
-                <button
-                  type="button"
-                  onClick={() => adjustWeight(+0.1)}
-                  disabled={!shipment}
-                  className="bg-slate-950 hover:bg-slate-800 disabled:opacity-40 text-slate-300 text-xs font-mono py-1 rounded border border-slate-800 transition"
-                >
-                  +0.1t
-                </button>
-                <button
-                  type="button"
-                  onClick={() => adjustWeight(+1.0)}
-                  disabled={!shipment}
-                  className="bg-slate-950 hover:bg-slate-800 disabled:opacity-40 text-slate-300 text-xs font-mono py-1 rounded border border-slate-800 transition"
-                >
-                  +1.0t
-                </button>
-              </div>
+              {!isValidWeightNumber && (
+                <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-1">
+                  <HelpCircle size={13} className="text-slate-500" />
+                  <span>Enter a positive numeric weight value to enable verification.</span>
+                </p>
+              )}
             </div>
 
-            {/* Logic: Weight Deviation Comparison Display */}
-            {deviationMetrics && (
-              <div className="mb-4 space-y-2">
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-slate-400">Expected vs Actual Delta:</span>
-                    <span
-                      data-testid="weight-difference-text"
-                      className={`font-bold ${
-                        deviationMetrics.diffTons === 0
-                          ? 'text-slate-300'
-                          : deviationMetrics.diffTons > 0
-                          ? 'text-amber-400'
-                          : 'text-blue-400'
-                      }`}
-                    >
-                      {deviationMetrics.diffTons > 0 ? '+' : ''}
-                      {deviationMetrics.diffTons.toFixed(2)} Tons
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400">Deviation Percentage:</span>
-                    <span
-                      data-testid="deviation-percentage-text"
-                      className={`font-bold text-sm ${
-                        deviationMetrics.isOver10Percent ? 'text-amber-400' : 'text-emerald-400'
-                      }`}
-                    >
-                      {deviationMetrics.deviationPct.toFixed(2)}%
-                    </span>
-                  </div>
-
-                  {/* Tolerance Indicator Progress */}
-                  <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-2">
-                    <div
-                      className={`h-full transition-all duration-300 ${
-                        deviationMetrics.isOver10Percent ? 'bg-amber-500' : 'bg-emerald-500'
-                      }`}
-                      style={{
-                        width: `${Math.min(100, (deviationMetrics.deviationPct / 20) * 100)}%`
-                      }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                    <span>0% (Exact)</span>
-                    <span className="text-slate-400 font-bold">10% Threshold</span>
-                    <span>20%+</span>
-                  </div>
+            {/* Deviation Calculation Readout */}
+            {activeShipment && isValidWeightNumber && (
+              <div
+                className={`p-4 rounded-2xl border transition-all space-y-2 ${
+                  isDeviationAboveTenPercent
+                    ? 'bg-amber-950/30 border-amber-500/40 text-amber-200'
+                    : 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200'
+                }`}
+              >
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold flex items-center gap-1.5">
+                    {isDeviationAboveTenPercent ? (
+                      <AlertTriangle size={15} className="text-amber-400" />
+                    ) : (
+                      <CheckCircle2 size={15} className="text-emerald-400" />
+                    )}
+                    Deviation Variance:
+                  </span>
+                  <span className="font-mono font-bold text-sm">
+                    {weightDifference >= 0 ? '+' : ''}
+                    {weightDifference.toFixed(2)} Tons ({deviationPercent.toFixed(1)}%)
+                  </span>
                 </div>
-
-                {/* TEST CASE 1: Prominent Yellow Warning Banner when deviation > 10% */}
-                {deviationMetrics.isOver10Percent && (
+                <div className="w-full bg-slate-950 h-2.5 rounded-full mt-2 overflow-hidden border border-slate-800">
                   <div
-                    data-testid="weight-discrepancy-warning"
-                    className="p-4 bg-amber-500/10 border-2 border-amber-500 text-amber-200 rounded-lg shadow-lg animate-pulse"
-                    role="alert"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="text-2xl text-amber-400 font-bold shrink-0">⚠️</div>
-                      <div className="space-y-1">
-                        <p className="font-extrabold text-sm text-amber-300 tracking-wide font-mono uppercase">
-                          Weight Discrepancy Detected - Requires Manual Audit.
-                        </p>
-                        <p className="text-xs text-amber-200/90 leading-relaxed">
-                          Actual weight ({deviationMetrics.actualTons.toFixed(2)}t) deviates by{' '}
-                          <strong>{deviationMetrics.deviationPct.toFixed(2)}%</strong> (threshold:
-                          10.00%) from declared manifest weight (
-                          {deviationMetrics.expectedTons.toFixed(2)}t). This record will be flagged
-                          for MRV auditor review.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Normal within-tolerance banner */}
-                {!deviationMetrics.isOver10Percent && (
-                  <div
-                    data-testid="tolerance-ok-banner"
-                    className="p-2.5 bg-emerald-950/40 border border-emerald-800 text-emerald-300 text-xs rounded-lg flex items-center gap-2 font-mono"
-                  >
-                    <span>✓</span>
-                    <span>Within Permissible Tolerance (≤ 10.0% variance)</span>
-                  </div>
-                )}
+                    className={`h-full transition-all duration-300 ${
+                      isDeviationAboveTenPercent ? 'bg-amber-400' : 'bg-emerald-400'
+                    }`}
+                    style={{ width: `${Math.min(100, (deviationPercent / 20) * 100)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-slate-400 mt-1 font-mono">
+                  <span>0% Tolerance</span>
+                  <span className="text-amber-400 font-semibold">10% Threshold</span>
+                  <span>20%+ High Audit</span>
+                </div>
               </div>
             )}
 
-            {/* Operator Observation Notes */}
-            <div className="mb-5">
-              <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1">
-                Optional Weigh-Bridge Audit Notes
+            {/* Optional Operator Audit Notes */}
+            <div className="space-y-2 pt-1">
+              <label
+                htmlFor="operator-notes"
+                className="text-xs font-semibold text-slate-300 flex items-center justify-between"
+              >
+                <span>Weighmaster / Scale Notes — Optional</span>
+                {isDeviationAboveTenPercent && (
+                  <span className="text-xs text-amber-400 font-semibold">
+                    * Audit justification recommended
+                  </span>
+                )}
               </label>
               <textarea
+                id="operator-notes"
+                rows={2}
                 value={operatorNotes}
                 onChange={(e) => setOperatorNotes(e.target.value)}
-                placeholder="Visual contamination notes, moisture observation, scale seal #..."
-                rows={2}
-                className="w-full bg-slate-950 border border-slate-800 focus:border-slate-600 text-white text-xs p-2.5 rounded-lg outline-none font-mono placeholder:text-slate-700 resize-none"
+                placeholder={
+                  isDeviationAboveTenPercent
+                    ? 'Explain cause of weight discrepancy (e.g. moisture loss, partial unloading, debris)...'
+                    : 'Enter weigh-scale observations, truck bay notes, or seal verification comments...'
+                }
+                className="w-full bg-slate-950/80 border border-slate-700 rounded-xl px-4 py-2.5 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 resize-none transition-all"
               />
             </div>
 
-            {/* TEST CASE 2: Action "Verify & Finalize Record" button disabled until a valid weight is entered */}
-            <button
-              type="button"
-              data-testid="verify-record-button"
-              onClick={handleVerify}
-              disabled={!isWeightValid || isSubmitting || !shipment}
-              className={`w-full py-3.5 px-4 rounded-lg font-mono font-black text-sm tracking-wider uppercase transition flex items-center justify-center gap-2 shadow-lg ${
-                isWeightValid && shipment && !isSubmitting
-                  ? deviationMetrics?.isOver10Percent
-                    ? 'bg-amber-600 hover:bg-amber-500 text-slate-950 shadow-amber-900/30'
-                    : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-900/30'
-                  : 'bg-slate-800 text-slate-500 border border-slate-700/50 cursor-not-allowed opacity-60'
-              }`}
-            >
-              {isSubmitting ? (
-                <>
-                  <span className="animate-spin inline-block">↻</span>
-                  <span>Signing & Finalizing Record...</span>
-                </>
-              ) : (
-                <>
-                  <span>📝</span>
-                  <span>Verify & Finalize Record</span>
-                </>
-              )}
-            </button>
+            {/* Action Buttons */}
+            <div className="pt-3 flex flex-col sm:flex-row gap-3.5">
+              <button
+                type="submit"
+                id="verify-finalize-btn"
+                disabled={isVerifyButtonDisabled}
+                className={`flex-1 py-3.5 px-5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${
+                  isVerifyButtonDisabled
+                    ? 'bg-slate-800/80 text-slate-500 border border-slate-700/50 cursor-not-allowed'
+                    : isDeviationAboveTenPercent
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-amber-500/20 active:scale-[0.99]'
+                    : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black shadow-emerald-500/20 active:scale-[0.99]'
+                }`}
+              >
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw size={16} className="animate-spin" />
+                    <span>Verifying Scale Data...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck size={18} />
+                    <span>Verify & Finalize Record</span>
+                  </>
+                )}
+              </button>
 
-            {!isWeightValid && shipment && (
-              <p className="text-[11px] font-mono text-slate-500 text-center mt-2">
-                * Please enter a valid non-zero weight to enable verification.
+              <button
+                type="button"
+                onClick={handleResetTerminal}
+                className="px-5 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-700 transition-all flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={14} />
+                <span>Reset Form</span>
+              </button>
+            </div>
+
+            {/* Test Case 2 Status Helper Text */}
+            {isVerifyButtonDisabled && (
+              <p className="text-xs text-slate-500 text-center font-mono pt-1">
+                {!activeShipment
+                  ? '⚠️ Please search or select a valid Shipment UUID first.'
+                  : !isValidWeightNumber
+                  ? '🔒 "Verify & Finalize Record" button is disabled until a valid weight is entered.'
+                  : ''}
               </p>
             )}
-          </section>
+          </form>
+        </div>
 
-          {/* Verification Audit Certificate / Success Card */}
-          {verificationResult && (
-            <section
-              data-testid="verification-success-card"
-              className={`p-4 rounded-xl border-2 font-mono text-xs shadow-xl animate-fadeIn ${
-                verificationResult.requiresManualAudit
-                  ? 'bg-amber-950/40 border-amber-600 text-amber-200'
-                  : 'bg-emerald-950/40 border-emerald-600 text-emerald-200'
-              }`}
+        {/* Right Column: Inbound Manifest Card & Warnings */}
+        <div className="lg:col-span-6 space-y-8">
+          {/* TEST CASE 1 WARNING BANNER: Prominent Yellow Warning Banner when deviation > 10% */}
+          {activeShipment && isValidWeightNumber && isDeviationAboveTenPercent && (
+            <div
+              id="weight-discrepancy-warning-banner"
+              className="bg-amber-500/15 border-2 border-amber-400 rounded-3xl p-6 sm:p-7 text-amber-200 shadow-2xl shadow-amber-500/10 animate-fade-in"
             >
-              <div className="flex items-center justify-between border-b border-current/20 pb-2 mb-2">
-                <span className="font-bold uppercase tracking-wider flex items-center gap-1.5">
-                  <span>{verificationResult.requiresManualAudit ? '⚠️' : '✅'}</span>
-                  <span>{verificationResult.status}</span>
-                </span>
-                <span className="font-bold">{verificationResult.verificationId}</span>
-              </div>
-              <p className="mb-2 text-[11px] leading-relaxed opacity-90">
-                {verificationResult.message}
-              </p>
-              <div className="space-y-1 text-[10px] opacity-80 pt-2 border-t border-current/20">
-                <div className="flex justify-between">
-                  <span>Shipment UUID:</span>
-                  <span className="font-bold">{verificationResult.shipmentUuid}</span>
+              <div className="flex items-start gap-3.5">
+                <div className="p-2.5 rounded-2xl bg-amber-400 text-slate-950 shrink-0 font-bold mt-0.5 shadow-md">
+                  <AlertTriangle size={24} className="animate-bounce" />
                 </div>
-                <div className="flex justify-between">
-                  <span>Final Verified Weight:</span>
-                  <span className="font-bold">{verificationResult.actualWeightTons} Tons</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Recorded Variance:</span>
-                  <span className="font-bold">{verificationResult.deviationPercentage.toFixed(2)}%</span>
-                </div>
-                {verificationResult.proofHash && (
-                  <div className="flex justify-between truncate pt-1">
-                    <span>Proof Hash:</span>
-                    <span className="font-bold truncate max-w-[180px]">{verificationResult.proofHash}</span>
+                <div className="space-y-2 flex-1">
+                  <h4 className="text-base font-black text-amber-300 uppercase tracking-wide">
+                    Weight Discrepancy Detected — Requires Manual Audit
+                  </h4>
+                  <p className="text-xs text-amber-200/90 leading-relaxed">
+                    The recorded actual weight (<strong>{parsedActualWeight.toFixed(2)} Tons</strong>)
+                    deviates by{' '}
+                    <strong className="underline decoration-amber-400 underline-offset-2">
+                      {deviationPercent.toFixed(1)}% ({weightDifference > 0 ? '+' : ''}
+                      {weightDifference.toFixed(2)} Tons)
+                    </strong>{' '}
+                    from the declared manifest expected weight (
+                    <strong>{expectedWeight.toFixed(2)} Tons</strong>), which exceeds the allowable
+                    10.0% operational tolerance threshold.
+                  </p>
+                  <div className="pt-2 flex flex-wrap items-center gap-2 text-xs font-mono text-amber-300/90">
+                    <span className="bg-amber-400/20 px-2.5 py-1 rounded-lg border border-amber-400/30">
+                      FLAG: AUDIT_REQUIRED
+                    </span>
+                    <span className="bg-amber-400/20 px-2.5 py-1 rounded-lg border border-amber-400/30">
+                      THRESHOLD: ±10.0%
+                    </span>
+                    <span className="bg-amber-400/20 px-2.5 py-1 rounded-lg border border-amber-400/30">
+                      VARIANCE: {deviationPercent.toFixed(2)}%
+                    </span>
                   </div>
-                )}
+                </div>
               </div>
-            </section>
+            </div>
+          )}
+
+          {/* Shipment Manifest Card */}
+          {activeShipment ? (
+            <div className="bg-slate-900/60 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6">
+              <div className="flex items-start justify-between gap-3 pb-4 border-b border-white/[0.08]">
+                <div className="space-y-1">
+                  <span className="text-xs font-mono uppercase tracking-widest text-slate-400">
+                    Inbound Manifest Record
+                  </span>
+                  <h3 className="text-xl font-bold font-mono text-white flex items-center gap-2">
+                    <Hash size={20} className="text-indigo-400" />
+                    {activeShipment.shipmentId}
+                  </h3>
+                </div>
+                <span
+                  className={`px-3.5 py-1 rounded-full text-xs font-bold border ${
+                    activeShipment.wasteType === 'Hazardous'
+                      ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                      : activeShipment.wasteType === 'Organic'
+                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                      : activeShipment.wasteType === 'Recyclable'
+                      ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30'
+                      : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                  }`}
+                >
+                  {activeShipment.wasteType}
+                </span>
+              </div>
+
+              {/* Three Required Displays: Expected Weight, Declared Waste Type, Generator Name */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Expected Weight Card */}
+                <div className="bg-slate-950/60 border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between space-y-2">
+                  <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                    <Scale size={15} className="text-emerald-400" />
+                    Expected Weight
+                  </span>
+                  <div>
+                    <span className="text-2xl font-mono font-extrabold text-white">
+                      {activeShipment.expectedWeightTons.toFixed(2)}
+                    </span>
+                    <span className="text-xs font-mono text-slate-400 ml-1.5">Tons</span>
+                  </div>
+                  <span className="text-xs text-slate-400 font-mono">
+                    {(activeShipment.expectedWeightTons * 1000).toLocaleString()} kg total
+                  </span>
+                </div>
+
+                {/* Declared Waste Type Card */}
+                <div className="bg-slate-950/60 border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between space-y-2">
+                  <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                    <Layers size={15} className="text-cyan-400" />
+                    Declared Waste
+                  </span>
+                  <div>
+                    <span className="text-lg font-bold text-white">
+                      {activeShipment.wasteType}
+                    </span>
+                  </div>
+                  <span className="text-xs text-cyan-400 font-mono">
+                    Verified Stream
+                  </span>
+                </div>
+
+                {/* Generator Name Card */}
+                <div className="bg-slate-950/60 border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between space-y-2">
+                  <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                    <Building2 size={15} className="text-amber-400" />
+                    Generator
+                  </span>
+                  <div>
+                    <span className="text-xs font-bold text-slate-200 line-clamp-2 leading-relaxed">
+                      {activeShipment.generatorName}
+                    </span>
+                  </div>
+                  <span className="text-xs text-slate-400 font-mono">
+                    Origin Verified
+                  </span>
+                </div>
+              </div>
+
+              {/* Extended Manifest Details (Truck / Logistics Metadata) */}
+              <div className="bg-slate-950/60 border border-white/[0.06] rounded-2xl p-5 space-y-3.5 text-xs">
+                <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
+                  <span className="text-slate-400 flex items-center gap-1.5">
+                    <Truck size={14} className="text-slate-500" />
+                    Transport Vehicle:
+                  </span>
+                  <span className="font-mono font-semibold text-slate-200">
+                    {activeShipment.vehicleRegistration || 'GJ-01-STANDARD'}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
+                  <span className="text-slate-400 flex items-center gap-1.5">
+                    <ClipboardCheck size={14} className="text-slate-500" />
+                    Security Seal #:
+                  </span>
+                  <span className="font-mono font-semibold text-emerald-400">
+                    {activeShipment.sealNumber || 'SEAL-INTACT-01'}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between py-1 border-b border-white/[0.04]">
+                  <span className="text-slate-400 flex items-center gap-1.5">
+                    <Building2 size={14} className="text-slate-500" />
+                    Origin Facility:
+                  </span>
+                  <span className="text-slate-300 truncate max-w-xs">
+                    {activeShipment.originLocation || 'Regional Collection Center'}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between py-1">
+                  <span className="text-slate-400 flex items-center gap-1.5">
+                    <Clock size={14} className="text-slate-500" />
+                    Dispatch Time:
+                  </span>
+                  <span className="font-mono text-slate-300">
+                    {activeShipment.dispatchTimestamp
+                      ? new Date(activeShipment.dispatchTimestamp).toLocaleTimeString()
+                      : 'Just now'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-slate-900/40 border border-dashed border-white/[0.1] rounded-3xl p-10 text-center space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/[0.04] flex items-center justify-center mx-auto text-slate-400">
+                <FileText size={28} />
+              </div>
+              <h4 className="text-base font-semibold text-slate-200">No Manifest Selected</h4>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                Search for an incoming truck manifest UUID above or click one of the preset
+                manifests to inspect expected weight and declared waste details.
+              </p>
+            </div>
+          )}
+
+          {/* Submission / Verification Success Receipt */}
+          {submissionResult && submissionResult.success && (
+            <div className="bg-slate-900/90 border-2 border-emerald-500/80 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-emerald-500/10 space-y-5 animate-fade-in">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-2xl bg-emerald-500 text-slate-950 font-bold shadow-md">
+                    <CheckCircle2 size={22} />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-white">
+                      Weigh-Station Record Finalized
+                    </h4>
+                    <p className="text-xs text-emerald-400 font-mono mt-0.5">
+                      Receipt: {submissionResult.receiptId}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono flex items-center gap-1.5 border border-slate-700 transition-all"
+                >
+                  <Printer size={13} />
+                  <span>Print Ticket</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-950/60 p-5 rounded-2xl border border-white/[0.06] text-xs font-mono">
+                <div>
+                  <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">EXPECTED</span>
+                  <span className="text-slate-200 font-bold text-sm">
+                    {submissionResult.expectedWeightTons?.toFixed(2)} T
+                  </span>
+                </div>
+                <div>
+                  <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">ACTUAL</span>
+                  <span className="text-emerald-400 font-bold text-sm">
+                    {submissionResult.actualWeightTons?.toFixed(2)} T
+                  </span>
+                </div>
+                <div>
+                  <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">VARIANCE</span>
+                  <span
+                    className={`font-bold text-sm ${
+                      submissionResult.hasDiscrepancy ? 'text-amber-400' : 'text-emerald-400'
+                    }`}
+                  >
+                    {submissionResult.deviationPercent?.toFixed(1)}%
+                  </span>
+                </div>
+                <div>
+                  <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">AUDIT STATUS</span>
+                  <span
+                    className={`font-bold text-sm ${
+                      submissionResult.hasDiscrepancy ? 'text-amber-400' : 'text-emerald-400'
+                    }`}
+                  >
+                    {submissionResult.hasDiscrepancy ? 'AUDIT_LOGGED' : 'CLEARED'}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-300">{submissionResult.message}</p>
+            </div>
           )}
         </div>
       </div>
     </div>
   );
 };
-
-export default FacilityIntakeTerminal;

@@ -229,42 +229,42 @@ export const WasteRouteMap: React.FC<WasteRouteMapProps> = ({
       {/* Top Floating Glass Toolbar & KPI Metrics */}
       <div className="absolute top-3 left-3 right-3 z-[1000] pointer-events-none flex flex-wrap items-center justify-between gap-2">
         {/* Left Summary Badge */}
-        <div className="pointer-events-auto flex items-center gap-2 bg-slate-900/85 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-700/80 shadow-lg text-xs">
+        <div className="pointer-events-auto flex items-center gap-2 bg-slate-900/85 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/[0.08] shadow-lg text-xs">
           <div className="flex items-center gap-1.5 font-semibold text-slate-200">
-            <Compass size={16} className="text-emerald-400 animate-spin-slow" />
+            <Compass size={16} className="text-indigo-400 animate-spin-slow" />
             <span>GIS Route Intelligence</span>
           </div>
 
-          <div className="h-4 w-px bg-slate-700 mx-1" />
+          <div className="h-4 w-px bg-white/[0.08] mx-1.5" />
 
-          <div className="flex items-center gap-3 text-slate-300">
-            <span className="flex items-center gap-1">
+          <div className="flex items-center gap-3.5 text-slate-300">
+            <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
               <strong className="text-white">{generators.length}</strong> Generators
               <span className="text-slate-400">({totalAvailableWaste.toFixed(1)}t avail)</span>
             </span>
 
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-sky-400"></span>
               <strong className="text-white">{facilities.length}</strong> Facilities
               <span className="text-slate-400">({totalRemainingCapacity.toFixed(0)}t cap)</span>
             </span>
 
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
               <strong className="text-white">{normalizedRoutes.length}</strong> Active Routes
             </span>
           </div>
         </div>
 
         {/* Right Action & Layer Toggles */}
-        <div className="pointer-events-auto flex items-center gap-1.5 bg-slate-900/85 backdrop-blur-md p-1 rounded-xl border border-slate-700/80 shadow-lg text-xs">
+        <div className="pointer-events-auto flex items-center gap-1.5 bg-slate-900/85 backdrop-blur-md p-1.5 rounded-2xl border border-white/[0.08] shadow-lg text-xs">
           <button
             type="button"
             onClick={() => setShowGenerators(!showGenerators)}
-            className={`px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-all font-medium ${
+            className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all font-medium ${
               showGenerators
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
             title="Toggle Generator Markers"
@@ -404,17 +404,17 @@ export const WasteRouteMap: React.FC<WasteRouteMapProps> = ({
                           </span>
                         </div>
                       </div>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800/60">
+                      <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-400/25">
                         Generator
                       </span>
                     </div>
 
                     {/* Available Waste Volume Callout (Test Case 2 Requirement) */}
-                    <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-lg p-2.5 mb-2.5 text-center">
-                      <span className="text-[11px] text-emerald-300 block font-medium">
+                    <div className="bg-indigo-950/30 border border-indigo-400/25 rounded-xl p-3 mb-3 text-center">
+                      <span className="text-[11px] text-indigo-300 block font-medium">
                         Available Waste Volume
                       </span>
-                      <strong className="text-xl font-extrabold text-emerald-400 tracking-tight">
+                      <strong className="text-xl font-extrabold text-indigo-200 tracking-tight">
                         {gen.availableWasteVolume !== undefined
                           ? `${gen.availableWasteVolume} ${gen.volumeUnit || 'tonnes'}`
                           : 'Not Specified'}

@@ -6,6 +6,7 @@ import {
 } from '../types/waste';
 import { generateUUIDv4, enqueueShipment } from '../services/idbStorage';
 import { syncService } from '../services/syncService';
+import { apiService, BackendGenerator } from '../services/apiService';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import {
   Send,
@@ -53,9 +54,21 @@ export const WasteCollectionForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentAlert, setCurrentAlert] = useState<FormAlertState | null>(null);
   const [lastGeneratedId, setLastGeneratedId] = useState<string | null>(null);
+  const [backendGenerators, setBackendGenerators] = useState<BackendGenerator[]>([]);
 
   // Network status hook (listens to navigator.onLine & online/offline events)
   const { isOnline } = useNetworkStatus();
+
+  // Load generators from backend on mount
+  useEffect(() => {
+    let isMounted = true;
+    apiService.getGenerators().then((data) => {
+      if (isMounted && data && data.length > 0) {
+        setBackendGenerators(data);
+      }
+    }).catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
 
   /**
    * TEST CASE 2: Network restores -> Component automatically processes the local queue.
@@ -331,13 +344,35 @@ export const WasteCollectionForm: React.FC = () => {
             <input
               id="generatorId"
               type="text"
+              list="registeredGeneratorsList"
               className="input-control font-mono"
-              placeholder="e.g., GEN-FACILITY-8821"
+              placeholder="e.g., GEN-GJ-01 or GEN-TX-4091"
               value={formData.generatorId}
-              onChange={(e) => handleChange('generatorId', e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleChange('generatorId', val);
+                const matched = backendGenerators.find((g) => g.id === val);
+                if (matched) {
+                  handleChange('weightKg', matched.quantity_tons * 1000);
+                  handleChange('contaminationLevel', matched.contamination_pct);
+                  if (matched.waste_type) {
+                    const formatted = matched.waste_type.charAt(0).toUpperCase() + matched.waste_type.slice(1).toLowerCase();
+                    handleChange('wasteType', formatted as WasteType);
+                  }
+                }
+              }}
               required
             />
-            <span className="input-hint">Unique identifier for the waste producer or facility</span>
+            {backendGenerators.length > 0 && (
+              <datalist id="registeredGeneratorsList">
+                {backendGenerators.map((gen) => (
+                  <option key={gen.id} value={gen.id}>
+                    {gen.name} ({gen.waste_type} - {gen.quantity_tons}t)
+                  </option>
+                ))}
+              </datalist>
+            )}
+            <span className="input-hint">Unique identifier for the waste producer or select registered facility</span>
           </div>
 
           {/* Field 2: Waste Type (Dropdown) */}

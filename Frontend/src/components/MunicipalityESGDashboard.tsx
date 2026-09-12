@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { apiService, EsgAnalyticsResponse } from '../services/apiService';
 import {
   ResponsiveContainer,
   BarChart,
@@ -28,6 +29,7 @@ import {
   Scale,
   Activity,
   Award,
+  RefreshCw,
 } from 'lucide-react';
 
 // TEST CASE 1: Realistic 6-month historical ESG and carbon accounting mock dataset
@@ -195,12 +197,31 @@ const CoreThesisTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) =>
 export const MunicipalityESGDashboard: React.FC = () => {
   const [activeTimeframe, setActiveTimeframe] = useState<'6M' | '3M' | '1Y'>('6M');
   const [activeChartMode, setActiveChartMode] = useState<'grouped' | 'net_avoided'>('grouped');
+  const [liveAnalytics, setLiveAnalytics] = useState<EsgAnalyticsResponse | null>(null);
+  const [isLoadingLive, setIsLoadingLive] = useState<boolean>(false);
 
-  // Aggregated Summary Statistics calculated across the dataset
-  const totalWasteProcessed = MONTHLY_ESG_DATA.reduce(
+  const fetchLiveAnalytics = async () => {
+    setIsLoadingLive(true);
+    try {
+      const res = await apiService.getEsgAnalytics();
+      setLiveAnalytics(res);
+    } catch {
+      // Backend offline, fallback to historical dataset
+    } finally {
+      setIsLoadingLive(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveAnalytics();
+  }, []);
+
+  // Aggregated Summary Statistics calculated across dataset + live backend
+  const baseWasteProcessed = MONTHLY_ESG_DATA.reduce(
     (acc, curr) => acc + curr.wasteProcessedTons,
     0
   );
+  const totalWasteProcessed = liveAnalytics?.summary.total_diverted_tonnes ?? baseWasteProcessed;
 
   const totalCarbonAwareTransportEmissions = MONTHLY_ESG_DATA.reduce(
     (acc, curr) => acc + curr.carbonAwareRouting,
@@ -212,50 +233,50 @@ export const MunicipalityESGDashboard: React.FC = () => {
     0
   );
 
-  const totalMethaneAvoided = MONTHLY_ESG_DATA.reduce(
+  const totalMethaneAvoided = liveAnalytics?.summary.methane_abated_tonnes ?? MONTHLY_ESG_DATA.reduce(
     (acc, curr) => acc + curr.totalMethaneAvoided,
     0
   );
 
   // Net City Carbon Reduction = (Total Landfill Methane Avoided + Transport Fuel Savings)
   const transportSavings = totalStandardTransportEmissions - totalCarbonAwareTransportEmissions;
-  const netCityCarbonReduction = totalMethaneAvoided + transportSavings;
+  const netCityCarbonReduction = liveAnalytics?.summary.total_net_co2e_avoided ?? (totalMethaneAvoided + transportSavings);
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6">
+    <div className="w-full max-w-7xl mx-auto space-y-8">
       {/* Top Municipal Executive Banner */}
-      <div className="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 sm:p-6 shadow-xl backdrop-blur-md">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-start sm:items-center gap-3.5">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/20 via-cyan-500/20 to-indigo-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-500/10 shrink-0">
-              <Building2 size={26} />
+      <div className="bg-slate-900/60 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="flex items-start sm:items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500/20 via-violet-500/15 to-cyan-500/15 border border-indigo-400/25 flex items-center justify-center text-indigo-300 shadow-lg shadow-indigo-500/10 shrink-0">
+              <Building2 size={28} />
             </div>
             <div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                   Gandhinagar Municipal Corporation
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                <span className="px-3 py-0.5 rounded-full text-xs font-mono font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-400/25">
                   Tier A ESG Certified
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+              <p className="text-xs sm:text-sm text-slate-400 mt-1">
                 Executive Climate Intelligence & Scope 1 / Scope 3 Waste Carbon Abatement Console
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-3">
             {/* Timeframe selector */}
-            <div className="flex items-center bg-slate-950/80 p-1 rounded-xl border border-slate-800 text-xs">
+            <div className="flex items-center bg-slate-950/80 p-1 rounded-2xl border border-white/[0.08] text-xs">
               {(['3M', '6M', '1Y'] as const).map((tf) => (
                 <button
                   key={tf}
                   type="button"
                   onClick={() => setActiveTimeframe(tf)}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-all ${
+                  className={`px-3.5 py-1.5 rounded-xl font-semibold transition-all ${
                     activeTimeframe === tf
-                      ? 'bg-slate-800 text-cyan-400 shadow-sm'
+                      ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 shadow-sm'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -266,8 +287,19 @@ export const MunicipalityESGDashboard: React.FC = () => {
 
             <button
               type="button"
+              onClick={fetchLiveAnalytics}
+              disabled={isLoadingLive}
+              className="px-4 py-2 rounded-2xl bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-200 text-xs font-semibold border border-indigo-400/30 transition-all flex items-center gap-2"
+              title="Refresh live ESG stats from backend"
+            >
+              <RefreshCw size={13} className={isLoadingLive ? 'animate-spin' : ''} />
+              <span>{isLoadingLive ? 'Syncing...' : 'Live Sync'}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => window.print()}
-              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-all flex items-center gap-1.5"
+              className="px-4 py-2 rounded-2xl bg-white/[0.05] hover:bg-white/[0.09] text-slate-300 hover:text-white text-xs font-semibold border border-white/[0.08] transition-all flex items-center gap-2"
             >
               <Download size={13} />
               <span>Export Report</span>
@@ -277,71 +309,71 @@ export const MunicipalityESGDashboard: React.FC = () => {
       </div>
 
       {/* 3 LARGE SUMMARY STAT CARDS AT TOP */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Stat Card 1: Total Waste Processed (Tons) */}
-        <div className="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 sm:p-6 shadow-xl backdrop-blur-md relative overflow-hidden group hover:border-slate-600 transition-all">
+        <div className="bg-slate-900/60 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-xl backdrop-blur-xl relative overflow-hidden group hover:border-indigo-400/30 transition-all duration-300">
           <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-2xl pointer-events-none" />
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-400 mb-3">
-            <span className="flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-400 mb-3.5">
+            <span className="flex items-center gap-2 uppercase tracking-wider text-[11px] text-cyan-300 font-bold">
               <Scale size={15} className="text-cyan-400" />
               Total Waste Processed
             </span>
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
               Last 6 Months
             </span>
           </div>
 
-          <div className="space-y-1">
-            <div className="flex items-baseline gap-2">
+          <div className="space-y-1.5">
+            <div className="flex items-baseline gap-2.5">
               <span className="text-3xl sm:text-4xl font-black font-mono text-white tracking-tight">
                 {totalWasteProcessed.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
               </span>
               <span className="text-base font-bold text-slate-400 font-mono">Tons</span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium pt-1">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-300 font-medium pt-1">
               <TrendingUp size={14} />
               <span>+14.8% YoY diversion volume from open dump</span>
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-2 gap-2 text-[11px] text-slate-400 font-mono">
+          <div className="mt-5 pt-3.5 border-t border-white/[0.06] grid grid-cols-2 gap-3 text-[11px] text-slate-400 font-mono">
             <div>
               <span className="text-slate-500 block text-[10px]">AVG MONTHLY</span>
-              <span className="text-slate-300 font-semibold">
+              <span className="text-slate-200 font-semibold">
                 {(totalWasteProcessed / 6).toFixed(1)} Tons/mo
               </span>
             </div>
             <div>
               <span className="text-slate-500 block text-[10px]">RECOVERY RATE</span>
-              <span className="text-emerald-400 font-semibold">93.4% Recycled/Biogas</span>
+              <span className="text-emerald-300 font-semibold">93.4% Recycled/Biogas</span>
             </div>
           </div>
         </div>
 
         {/* Stat Card 2: Total Transport Emissions (tCO2e) */}
-        <div className="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 sm:p-6 shadow-xl backdrop-blur-md relative overflow-hidden group hover:border-slate-600 transition-all">
+        <div className="bg-slate-900/60 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-xl backdrop-blur-xl relative overflow-hidden group hover:border-amber-400/30 transition-all duration-300">
           <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-400 mb-3">
-            <span className="flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-400 mb-3.5">
+            <span className="flex items-center gap-2 uppercase tracking-wider text-[11px] text-amber-300 font-bold">
               <Car size={15} className="text-amber-400" />
               Total Transport Emissions
             </span>
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/20">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/20">
               Scope 1 Logistics
             </span>
           </div>
 
-          <div className="space-y-1">
-            <div className="flex items-baseline gap-2">
+          <div className="space-y-1.5">
+            <div className="flex items-baseline gap-2.5">
               <span className="text-3xl sm:text-4xl font-black font-mono text-white tracking-tight">
                 {totalCarbonAwareTransportEmissions.toFixed(2)}
               </span>
               <span className="text-base font-bold text-slate-400 font-mono">tCO₂e</span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium pt-1">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-300 font-medium pt-1">
               <TrendingDown size={14} />
               <span>
-                -{(totalStandardTransportEmissions - totalCarbonAwareTransportEmissions).toFixed(1)} tCO₂e (-41.1%) vs unoptimized routes
+                -{(totalStandardTransportEmissions - totalCarbonAwareTransportEmissions).toFixed(1)} tCO₂e (-41.1%) vs unoptimized
               </span>
             </div>
           </div>
@@ -360,47 +392,52 @@ export const MunicipalityESGDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Stat Card 3: MASSIVE HIGHLIGHTED CARD - Net City Carbon Reduction (tCO2e) */}
-        <div className="bg-gradient-to-br from-emerald-950/80 via-slate-900/95 to-teal-950/80 border-2 border-emerald-500/80 rounded-2xl p-5 sm:p-6 shadow-2xl shadow-emerald-500/20 backdrop-blur-md relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-44 h-44 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none animate-pulse" />
-          <div className="flex items-center justify-between text-xs font-bold text-emerald-300 mb-3">
-            <span className="flex items-center gap-1.5 uppercase tracking-wider text-[11px] text-emerald-400">
+        {/* Stat Card 3: Refined Soft Impact Card - Net City Carbon Reduction (tCO2e) */}
+        <div className="bg-gradient-to-br from-indigo-950/40 via-slate-900/90 to-purple-950/40 border border-indigo-400/25 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative overflow-hidden group hover:border-indigo-400/40 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-300 mb-3.5">
+            <span className="flex items-center gap-2 uppercase tracking-wider text-[11px] text-indigo-300 font-bold">
               <Leaf size={16} className="text-emerald-400" />
               Net City Carbon Reduction
             </span>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-black bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30">
+            <span className="px-3 py-0.5 rounded-full text-[10px] font-mono font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-400/25 shadow-sm">
               KEY ESG IMPACT
             </span>
           </div>
 
-          <div className="space-y-1">
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl sm:text-5xl font-black font-mono text-emerald-300 tracking-tight drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+          <div className="space-y-1.5">
+            <div className="flex items-baseline gap-2.5">
+              <span className="text-3xl sm:text-5xl font-black font-mono tracking-tight bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">
                 {netCityCarbonReduction.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
               </span>
-              <span className="text-lg font-bold text-emerald-400 font-mono">tCO₂e</span>
+              <span className="text-lg font-bold text-teal-300/80 font-mono">tCO₂e</span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-200/90 font-medium pt-1">
+            <div className="flex items-center gap-1.5 text-xs text-slate-300 font-medium pt-1">
               <TreePine size={14} className="text-emerald-400" />
-              <span>Equivalent to 42,300 mature urban trees planted</span>
+              <span>Equivalent to ~42,300 mature urban trees planted</span>
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-emerald-800/50 flex items-center justify-between text-[11px] text-emerald-300 font-mono">
-            <span>Landfill Methane: <strong>{totalMethaneAvoided.toFixed(1)} tCO₂e</strong></span>
-            <span>•</span>
-            <span>Route Optimization: <strong>{transportSavings.toFixed(1)} tCO₂e</strong></span>
+          <div className="mt-5 pt-3.5 border-t border-white/[0.08] grid grid-cols-2 gap-3 text-[11px] text-slate-400 font-mono">
+            <div>
+              <span className="text-slate-500 block text-[10px]">LANDFILL DIVERSION</span>
+              <strong className="text-emerald-300 font-semibold">{totalMethaneAvoided.toFixed(1)} tCO₂e</strong>
+            </div>
+            <div>
+              <span className="text-slate-500 block text-[10px]">ROUTE OPTIMIZATION</span>
+              <strong className="text-cyan-300 font-semibold">{transportSavings.toFixed(1)} tCO₂e</strong>
+            </div>
           </div>
         </div>
       </div>
 
       {/* CORE THESIS CHART: 6-Month Comparative Bar Chart */}
-      <div className="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 sm:p-6 shadow-xl backdrop-blur-md space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+      <div className="bg-slate-900/60 border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-xl backdrop-blur-xl space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.08]">
           <div>
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
-                <Activity size={18} />
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-indigo-500/15 text-indigo-400 border border-indigo-400/20">
+                <Activity size={20} />
               </div>
               <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
                 Core Thesis: Routing Optimization Carbon Abatement (Last 6 Months)
@@ -412,14 +449,14 @@ export const MunicipalityESGDashboard: React.FC = () => {
           </div>
 
           {/* Chart View Mode Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={() => setActiveChartMode('grouped')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 activeChartMode === 'grouped'
-                  ? 'bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                  ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/25'
+                  : 'bg-white/[0.05] hover:bg-white/[0.09] text-slate-300 border border-white/[0.08]'
               }`}
             >
               Side-by-Side Comparison
@@ -427,10 +464,10 @@ export const MunicipalityESGDashboard: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveChartMode('net_avoided')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 activeChartMode === 'net_avoided'
-                  ? 'bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                  ? 'bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-md shadow-sky-500/25'
+                  : 'bg-white/[0.05] hover:bg-white/[0.09] text-slate-300 border border-white/[0.08]'
               }`}
             >
               Net Carbon Avoided

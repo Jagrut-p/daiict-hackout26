@@ -222,7 +222,7 @@ export const SyncNotificationCenter: React.FC = () => {
             type="button"
             id="online-status-pill"
             onClick={() => setIsDrawerOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-bold shadow-lg shadow-emerald-500/10 backdrop-blur-md hover:bg-emerald-900/60 transition-all cursor-pointer"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-emerald-400/30 text-emerald-300 text-xs font-mono font-medium shadow-lg backdrop-blur-md hover:bg-slate-850 transition-all cursor-pointer"
             title={
               queuedCount > 0
                 ? `Connected (${queuedCount} offline items ready to sync). Click to inspect.`
@@ -360,7 +360,7 @@ export const SyncNotificationCenter: React.FC = () => {
                 className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
                   queuedItems.length === 0 || isSyncing
                     ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
-                    : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20'
+                    : 'bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-lg shadow-indigo-500/25'
                 }`}
               >
                 <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
