@@ -1,5 +1,12 @@
+# ==============================================================================
+# CONTRIBUTING & ARCHITECTURE NOTE:
+# In-memory data store — do not reintroduce a database dependency without
+# also shipping a schema/migration and updating this comment.
+# ==============================================================================
+
 import os
 import math
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, HTTPException, Query
@@ -8,25 +15,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-app = FastAPI(
-    title="Waste-to-Carbon Value Chain Tracker API",
-    description="Carbon-aware routing, offline synchronization, and MRV calculation engine for HackOut 2026",
-    version="2.1.0"
-)
-
-# Enable CORS for frontend integration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-frontend_dist = os.path.join(os.path.dirname(__file__), "Frontend", "dist")
-frontend_assets = os.path.join(frontend_dist, "assets")
-if os.path.exists(frontend_assets):
-    app.mount("/assets", StaticFiles(directory=frontend_assets), name="assets")
+# Google OR-Tools CVRP Route Optimization Engine
+try:
+    from optimizer import solve_cvrp_route
+    ORTOOLS_AVAILABLE = True
+except ImportError:
+    solve_cvrp_route = None
+    ORTOOLS_AVAILABLE = False
 
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     R = 6371.0
@@ -152,6 +147,26 @@ def seed_baseline_data():
         "lng": 72.6712,
         "address": "Pethapur Farm Collective, Gandhinagar"
     }
+    GENERATORS["GEN-AHM-02"] = {
+        "id": "GEN-AHM-02",
+        "name": "Ashram Rd Commercial Kitchen",
+        "waste_type": "Organic",
+        "quantity_tons": 3.2,
+        "contamination_pct": 5.0,
+        "lat": 23.0400,
+        "lng": 72.5700,
+        "address": "Ashram Road, Central Ahmedabad"
+    }
+    GENERATORS["GEN-AHM-03"] = {
+        "id": "GEN-AHM-03",
+        "name": "Navrangpura Central Food Court",
+        "waste_type": "Organic",
+        "quantity_tons": 2.8,
+        "contamination_pct": 6.0,
+        "lat": 23.0350,
+        "lng": 72.5550,
+        "address": "Navrangpura Commercial Complex, Ahmedabad"
+    }
     GENERATORS["GEN-TX-4091"] = {
         "id": "GEN-TX-4091",
         "name": "Hotel Grand Organic Waste",
@@ -274,13 +289,35 @@ def seed_baseline_data():
             "anti_tamper_hash": f"SHA256-{abs(hash(sid)) % 1000000:06d}-SECURE"
         }
 
-@app.on_event("startup")
-def auto_seed_data():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     seed_baseline_data()
     print("\n=======================================================")
     print(">>> EcoSync Backend Online: Seed Data Successfully Loaded! <<<")
     print(">>> Listening on http://127.0.0.1:8000                  <<<")
     print("=======================================================\n")
+    yield
+
+app = FastAPI(
+    title="Waste-to-Carbon Value Chain Tracker API",
+    description="Carbon-aware routing, offline synchronization, and MRV calculation engine for HackOut 2026",
+    version="2.1.0",
+    lifespan=lifespan
+)
+
+# Enable CORS for frontend integration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+frontend_dist = os.path.join(os.path.dirname(__file__), "Frontend", "dist")
+frontend_assets = os.path.join(frontend_dist, "assets")
+if os.path.exists(frontend_assets):
+    app.mount("/assets", StaticFiles(directory=frontend_assets), name="assets")
 
 # Pydantic Schemas
 class GeneratorIn(BaseModel):
@@ -314,6 +351,7 @@ class ShipmentSyncIn(BaseModel):
     wasteType: str
     weightKg: float
     contaminationLevel: float
+    facilityId: Optional[str] = None
     createdAt: Optional[str] = None
     status: Optional[str] = "synced"
     syncAttemptCount: Optional[int] = 0
@@ -330,12 +368,25 @@ class ShipmentVerifyIn(BaseModel):
     verifiedAt: Optional[str] = None
     scaleTerminalId: Optional[str] = None
 
+class DepotCoords(BaseModel):
+    lat: float
+    lng: float
+
+class RouteOptimizeIn(BaseModel):
+    depot: Optional[DepotCoords] = None
+    depot_lat: Optional[float] = None
+    depot_lng: Optional[float] = None
+    generator_ids: List[str] = Field(default_factory=list)
+    facility_id: str
+    vehicle_capacity_tons: Optional[float] = 10.0
+
 @app.get("/health")
 def health_check():
     return {
         "status": "online",
         "system": "Waste-to-Carbon Value Chain Tracker",
         "version": "2.1.0",
+        "ortools_available": ORTOOLS_AVAILABLE,
         "stats": {
             "generators_count": len(GENERATORS),
             "facilities_count": len(FACILITIES),
@@ -387,11 +438,10 @@ def add_facility(fac: FacilityIn):
 def list_facilities():
     return list(FACILITIES.values())
 
-# 3. Carbon-Aware Facility Matching (must precede {facility_id})
-@app.get("/facilities/match")
-def match_facility(generator_id: str):
+# 3. Carbon-Aware Facility Matching Helper & Endpoints
+def calculate_facility_matches(generator_id: str) -> Optional[Dict[str, Any]]:
     if generator_id not in GENERATORS:
-        raise HTTPException(status_code=404, detail=f"Generator '{generator_id}' not found")
+        return None
     gen = GENERATORS[generator_id]
 
     matches = []
@@ -403,7 +453,7 @@ def match_facility(generator_id: str):
         fac_type = str(fac.get("accepted_waste_type", "Organic")).lower()
         max_contam = float(fac.get("max_contamination_pct", 20.0))
 
-        # Check waste type compatibility (relaxed matching for demo)
+        # Waste type compatibility matching
         type_compatible = (
             fac_type in gen_type or
             gen_type in fac_type or
@@ -419,7 +469,7 @@ def match_facility(generator_id: str):
         if gen_contamination > max_contam:
             continue
 
-        # Distance & Transport Emissions (approx. 0.0009 tCO2e / km / ton)
+        # Distance & Transport Emissions (0.0009 tCO2e / km / ton)
         dist_km = haversine_km(gen["lat"], gen["lng"], fac["lat"], fac["lng"])
         transport_emissions = dist_km * 0.0009 * gen_qty
         processing_emissions = fac["processing_factor"] * gen_qty
@@ -443,7 +493,6 @@ def match_facility(generator_id: str):
             "lng": fac["lng"]
         })
 
-    # Sort lowest carbon penalty first (Carbon-Aware rank)
     matches.sort(key=lambda x: x["total_emissions_penalty"])
     return {
         "generator": gen,
@@ -452,13 +501,91 @@ def match_facility(generator_id: str):
         "evaluated_count": len(matches)
     }
 
+@app.get("/facilities/match")
+def match_facility(generator_id: str):
+    result = calculate_facility_matches(generator_id)
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Generator '{generator_id}' not found")
+    return result
+
 @app.get("/facilities/{facility_id}")
 def get_facility(facility_id: str):
     if facility_id not in FACILITIES:
         raise HTTPException(status_code=404, detail="Facility not found")
     return FACILITIES[facility_id]
 
-# 4. Idempotent Shipment Logging & Syncing
+# 4. Route Optimization (Google OR-Tools CVRP)
+@app.get("/routes/optimize/health")
+def routes_health():
+    return {
+        "status": "online" if ORTOOLS_AVAILABLE else "ortools_missing",
+        "ortools_available": ORTOOLS_AVAILABLE,
+        "solver": "Google OR-Tools CVRP (Guided Local Search)"
+    }
+
+@app.post("/routes/optimize")
+def optimize_routes(payload: RouteOptimizeIn):
+    if not ORTOOLS_AVAILABLE or solve_cvrp_route is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Google OR-Tools CVRP solver is not available on server. Install ortools package."
+        )
+
+    if payload.facility_id not in FACILITIES:
+        raise HTTPException(status_code=404, detail=f"Facility '{payload.facility_id}' not found")
+    facility = FACILITIES[payload.facility_id]
+
+    stops = []
+    for gid in payload.generator_ids:
+        if gid not in GENERATORS:
+            raise HTTPException(status_code=404, detail=f"Generator '{gid}' not found")
+        gen = GENERATORS[gid]
+        stops.append({
+            "id": gen["id"],
+            "name": gen["name"],
+            "lat": float(gen["lat"]),
+            "lng": float(gen["lng"]),
+            "demand_tons": float(gen.get("quantity_tons", 2.0)),
+            "is_facility": False
+        })
+
+    # Terminal stop at destination facility
+    stops.append({
+        "id": facility["id"],
+        "name": facility["name"],
+        "lat": float(facility["lat"]),
+        "lng": float(facility["lng"]),
+        "demand_tons": 0.0,
+        "is_facility": True
+    })
+
+    if payload.depot:
+        depot_coords = (float(payload.depot.lat), float(payload.depot.lng))
+    elif payload.depot_lat is not None and payload.depot_lng is not None:
+        depot_coords = (float(payload.depot_lat), float(payload.depot_lng))
+    else:
+        # Default central logistics depot (Gandhinagar / DA-IICT hub)
+        depot_coords = (23.1885, 72.6288)
+
+    vehicle_cap = float(payload.vehicle_capacity_tons or 10.0)
+    result = solve_cvrp_route(depot_coords, stops, vehicle_capacity_tons=vehicle_cap)
+
+    if not result:
+        raise HTTPException(
+            status_code=422,
+            detail="No feasible CVRP route found. Demands may exceed vehicle capacity."
+        )
+
+    return {
+        "status": "optimized",
+        "ordered_route": result["ordered_route"],
+        "total_distance_km": result["total_distance_km"],
+        "total_transport_emissions_tCO2e": result["total_transport_emissions_tCO2e"],
+        "facility": facility,
+        "depot": {"lat": depot_coords[0], "lng": depot_coords[1]}
+    }
+
+# 5. Idempotent Shipment Logging & Syncing
 @app.get("/shipments")
 def list_shipments():
     enriched = []
@@ -507,8 +634,23 @@ def sync_shipment(payload: ShipmentSyncIn):
     else:
         shipment_dict["generatorName"] = f"Generator ({gid})"
 
-    shipment_dict["facilityId"] = "FAC-BIOGAS-02"
-    shipment_dict["facilityName"] = "Sector 30 CBG Anaerobic Digestion Plant"
+    # Facility assignment: respect explicit payload if provided and valid, otherwise auto-match
+    if payload.facilityId and payload.facilityId in FACILITIES:
+        shipment_dict["facilityId"] = payload.facilityId
+        shipment_dict["facilityName"] = FACILITIES[payload.facilityId]["name"]
+    else:
+        match_data = calculate_facility_matches(gid)
+        if match_data and match_data.get("optimal_facility"):
+            opt = match_data["optimal_facility"]
+            shipment_dict["facilityId"] = opt["facility_id"]
+            shipment_dict["facilityName"] = opt["facility_name"]
+        elif FACILITIES:
+            first_fid = next(iter(FACILITIES))
+            shipment_dict["facilityId"] = first_fid
+            shipment_dict["facilityName"] = FACILITIES[first_fid]["name"]
+        else:
+            shipment_dict["facilityId"] = "FAC-DEFAULT"
+            shipment_dict["facilityName"] = "Municipal Waste Hub"
 
     SHIPMENTS[payload.shipment_id] = shipment_dict
 
@@ -555,7 +697,7 @@ def verify_shipment(payload: ShipmentVerifyIn):
         "timestamp": now_iso
     }
 
-# 5. MRV Calculation & Carbon Certificates
+# 6. MRV Calculation & Carbon Certificates
 def calculate_carbon_internal(shipment_uuid: str) -> Dict[str, Any]:
     if shipment_uuid not in SHIPMENTS:
         raise HTTPException(status_code=404, detail="Shipment not found")
@@ -618,24 +760,28 @@ def get_certificate(shipment_uuid: str):
         raise HTTPException(status_code=404, detail="Carbon certificate not found")
     return CARBON_RECORDS[shipment_uuid]
 
-# 6. ESG & Analytics Engine
+# 7. ESG & Analytics Engine (Strict Real Computed Totals)
 @app.get("/carbon/analytics")
 def get_esg_analytics():
-    total_tons = sum(s.get("weightTons", s.get("weightKg", 0)/1000.0) for s in SHIPMENTS.values())
+    total_tons = sum(s.get("weightTons", s.get("weightKg", 0) / 1000.0) for s in SHIPMENTS.values())
     total_avoided = sum(c.get("net_climate_benefit_tCO2e", 0) for c in CARBON_RECORDS.values())
     total_methane = sum(c.get("avoided_landfill_tCO2e", 0) for c in CARBON_RECORDS.values())
     total_transport = sum(c.get("transport_tCO2e", 0) for c in CARBON_RECORDS.values())
 
+    is_empty = len(SHIPMENTS) == 0
+    avg_reduction = round((total_avoided / total_methane) * 100.0, 1) if total_methane > 0 else 0.0
+
     return {
         "summary": {
-            "total_diverted_tonnes": round(total_tons + 12280.0, 1),
-            "total_net_co2e_avoided": round(total_avoided + 145.8, 2),
-            "methane_abated_tonnes": round(total_methane + 1650.4, 2),
-            "fleet_transport_emissions": round(total_transport + 18.2, 2),
-            "average_reduction_percentage": 41.2,
+            "total_diverted_tonnes": round(total_tons, 2),
+            "total_net_co2e_avoided": round(total_avoided, 2),
+            "methane_abated_tonnes": round(total_methane, 2),
+            "fleet_transport_emissions": round(total_transport, 2),
+            "average_reduction_percentage": avg_reduction,
             "active_facilities": len(FACILITIES),
             "active_generators": len(GENERATORS),
-            "total_shipments_logged": len(SHIPMENTS)
+            "total_shipments_logged": len(SHIPMENTS),
+            "is_baseline": is_empty
         },
         "recent_shipments": list(SHIPMENTS.values())[-6:],
         "generated_at": datetime.now(timezone.utc).isoformat()
