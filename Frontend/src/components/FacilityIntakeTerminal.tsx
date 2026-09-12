@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useId } from 'react';
+﻿import React, { useState, useEffect, useId } from 'react';
 import {
   Scale,
   Search,
@@ -336,91 +336,100 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
   };
 
   return (
-    <div className="w-full mx-auto space-y-8">
-      {/* Top Header & Fast Action Presets */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-400/25 flex items-center justify-center text-indigo-400 shadow-md">
-              <Scale size={28} className="animate-pulse" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className="text-xl sm:text-2xl font-black text-[var(--text-primary)] tracking-tight">
-                  Facility Intake Terminal
-                </h2>
-                <span className="px-3 py-1 rounded-lg text-xs font-mono font-semibold bg-indigo-500/15 text-indigo-400 border border-indigo-400/25">
-                  Bay 02 Active
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-                Weigh-Station Operator Inbound Verification & Audit Console
-              </p>
-            </div>
+    <div className="fit-root">
+      {/* Header */}
+      <div className="fit-header">
+        <div className="fit-header-left">
+          <div className="fit-header-icon-wrap">
+            <Scale size={22} className="fit-header-icon" />
           </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="text-xs text-[var(--text-muted)] font-medium mr-1">Quick Load Manifest:</span>
-            {availableManifests.slice(0, 4).map((manifest) => (
-              <button
-                key={manifest.shipmentId}
-                type="button"
-                onClick={() => handleSelectPreset(manifest)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all flex items-center gap-1.5 ${
-                  activeShipment?.shipmentId === manifest.shipmentId
-                    ? 'bg-indigo-500/20 text-indigo-400 dark:text-indigo-200 border border-indigo-400/40 shadow-sm'
-                    : 'bg-slate-500/[0.08] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-slate-500/[0.14] border border-[var(--border-color)]'
-                }`}
-              >
-                <Truck size={13} />
-                <span>{manifest.shipmentId}</span>
-              </button>
-            ))}
+          <div>
+            <h2 className="fit-title">Facility Intake Terminal</h2>
+            <p className="fit-subtitle">
+              Weigh-station operator inbound verification &amp; audit console
+            </p>
           </div>
+        </div>
+        <div className="fit-header-right">
+          <div className="fit-bay-badge">
+            <Scale size={13} />
+            <span>Bay 02 Active</span>
+          </div>
+          {availableManifests.slice(0, 4).map((manifest) => (
+            <button
+              key={manifest.shipmentId}
+              type="button"
+              onClick={() => handleSelectPreset(manifest)}
+              className={`fit-manifest-btn ${
+                activeShipment?.shipmentId === manifest.shipmentId ? 'fit-manifest-btn--active' : ''
+              }`}
+            >
+              <Truck size={13} />
+              <span>{manifest.shipmentId}</span>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Main Terminal Grid: Inbound Manifest Search & Actual Weight Verification */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-7 lg:gap-8">
-        {/* Left Column: Search & Scale Input Form */}
-        <div className="xl:col-span-6 space-y-7 min-w-0">
-          <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-xl space-y-6">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2.5 pb-4 border-b border-[var(--border-color)]">
-              <Search size={18} className="text-indigo-400" />
-              1. Inbound Manifest Lookup
-            </h3>
+      {/* Warning Banner: Deviation > 10% */}
+      {activeShipment && isValidWeightNumber && isDeviationAboveTenPercent && (
+        <div className="fit-warning-banner" id="weight-discrepancy-warning-banner">
+          <div className="fit-warning-icon">
+            <AlertTriangle size={22} />
+          </div>
+          <div>
+            <strong style={{ display: 'block', marginBottom: '0.25rem' }}>
+              Weight Discrepancy Detected â€” Requires Manual Audit
+            </strong>
+            <p style={{ fontSize: '0.78rem', lineHeight: 1.5, margin: 0 }}>
+              Actual weight (<strong>{parsedActualWeight.toFixed(2)} T</strong>) deviates by{' '}
+              <strong>{deviationPercent.toFixed(1)}%</strong>{' '}
+              ({weightDifference > 0 ? '+' : ''}{weightDifference.toFixed(2)} T)
+              from expected (<strong>{expectedWeight.toFixed(2)} T</strong>),
+              exceeding the 10% operational tolerance.
+            </p>
+            <div className="fit-warning-flags">
+              <span className="fit-warning-flag">AUDIT_REQUIRED</span>
+              <span className="fit-warning-flag">Â±10.0% THRESHOLD</span>
+              <span className="fit-warning-flag">VARIANCE: {deviationPercent.toFixed(2)}%</span>
+            </div>
+          </div>
+        </div>
+      )}
 
-            {/* Shipment UUID Search Bar */}
-            <div className="space-y-3.5">
-              <label
-                htmlFor={searchInputId}
-                className="text-xs font-semibold text-[var(--text-secondary)] flex items-center justify-between"
-              >
+      {/* Body: Two-column grid */}
+      <div className="fit-body">
+        {/* Left Column: Search & Scale Input */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {/* Panel 1: Manifest Lookup */}
+          <div className="fit-panel">
+            <div className="fit-panel-header">
+              <Search size={15} className="text-indigo-400" />
+              <h3 className="fit-panel-title">1. Inbound Manifest Lookup</h3>
+              <span className="fit-panel-note">Type UUID or pick quick manifest</span>
+            </div>
+
+            <div className="fit-input-group">
+              <label htmlFor={searchInputId} className="fit-input-label">
                 <span>Shipment UUID / Manifest Barcode</span>
-                <span className="text-[11px] text-[var(--text-muted)] font-normal">
-                  Type UUID or pick quick manifest
-                </span>
               </label>
-
-              <div className="relative">
+              <div style={{ position: 'relative' }}>
+                <Search size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
                 <input
                   id={searchInputId}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="e.g. SHP-TX-9842 or custom UUID..."
-                  style={{ paddingLeft: '3.25rem', paddingRight: '4.75rem' }}
-                  className="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl py-4 text-sm font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all shadow-sm"
-                />
-                <Search
-                  size={18}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                  className="fit-input"
+                  style={{ paddingLeft: '2.75rem', paddingRight: searchQuery ? '4rem' : '1rem' }}
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => handleSearch('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] px-2.5 py-1 rounded-lg bg-slate-500/15 border border-[var(--border-color)] transition-colors"
+                    className="fit-manifest-btn"
+                    style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)', padding: '0.25rem 0.6rem', fontSize: '0.7rem' }}
                   >
                     Clear
                   </button>
@@ -428,49 +437,37 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
               </div>
             </div>
 
-            {/* Operator Quick Simulator Buttons */}
+            {/* Quick Scale Simulation Triggers */}
             {activeShipment && (
-              <div className="mt-8 pt-6 border-t border-[var(--border-color)] space-y-3.5">
-                <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
-                  <span className="font-semibold flex items-center gap-1.5 text-[var(--text-secondary)]">
-                    <Sparkles size={14} className="text-amber-400" />
-                    Quick Scale Simulation Triggers:
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.25rem' }}>
+                <div className="fit-input-label" style={{ marginBottom: '0.65rem' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Sparkles size={13} style={{ color: '#fbbf24' }} />
+                    Quick Scale Simulation Triggers
                   </span>
-                  <span className="text-[11px] font-mono">1-Click Test Presets</span>
+                  <span className="fit-panel-note">1-Click Test Presets</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="fit-sim-grid">
                   <button
                     type="button"
-                    onClick={() => {
-                      setActualWeightInput(activeShipment.expectedWeightTons.toFixed(2));
-                    }}
-                    className="px-3.5 py-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/25 text-xs font-mono font-bold transition-all text-center shadow-sm"
+                    onClick={() => setActualWeightInput(activeShipment.expectedWeightTons.toFixed(2))}
+                    className="fit-sim-btn fit-sim-btn--exact"
                     title="Exact Match: 0% deviation"
                   >
                     Exact: {activeShipment.expectedWeightTons} T
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      const overweight = Number(
-                        (activeShipment.expectedWeightTons * 1.15).toFixed(2)
-                      );
-                      setActualWeightInput(overweight.toString());
-                    }}
-                    className="px-3.5 py-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-300 hover:bg-amber-500/25 text-xs font-mono font-bold transition-all text-center shadow-sm"
+                    onClick={() => setActualWeightInput(Number((activeShipment.expectedWeightTons * 1.15).toFixed(2)).toString())}
+                    className="fit-sim-btn fit-sim-btn--over"
                     title="Test Case 1: +15% Discrepancy"
                   >
                     +15% Deviation
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      const underweight = Number(
-                        (activeShipment.expectedWeightTons * 0.82).toFixed(2)
-                      );
-                      setActualWeightInput(underweight.toString());
-                    }}
-                    className="px-3.5 py-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-300 hover:bg-amber-500/25 text-xs font-mono font-bold transition-all text-center shadow-sm"
+                    onClick={() => setActualWeightInput(Number((activeShipment.expectedWeightTons * 0.82).toFixed(2)).toString())}
+                    className="fit-sim-btn fit-sim-btn--under"
                     title="Test Case 1: -18% Discrepancy"
                   >
                     -18% Deviation
@@ -480,34 +477,27 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
             )}
           </div>
 
-          {/* Scale Input Section */}
-          <form
-            onSubmit={handleVerifyAndFinalize}
-            className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-xl space-y-6"
-          >
-            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2.5 pb-4 border-b border-[var(--border-color)]">
-              <Scale size={18} className="text-emerald-400" />
-              2. Scale Measurement & Verification
-            </h3>
+          {/* Panel 2: Scale Measurement & Verification */}
+          <form onSubmit={handleVerifyAndFinalize} className="fit-panel">
+            <div className="fit-panel-header">
+              <Scale size={15} className="text-emerald-400" />
+              <h3 className="fit-panel-title">2. Scale Measurement & Verification</h3>
+            </div>
 
-            {/* Numeric input for Actual Received Weight (Tons) */}
-            <div className="space-y-3">
-              <label
-                htmlFor={weightInputId}
-                className="text-xs font-semibold text-[var(--text-secondary)] flex items-center justify-between"
-              >
-                <span className="flex items-center gap-1.5">
-                  <span>Actual Received Weight (Tons)</span>
-                  <span className="text-rose-400 font-bold">*</span>
+            <div className="fit-input-group">
+              <label htmlFor={weightInputId} className="fit-input-label">
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  Actual Received Weight (Tons)
+                  <span style={{ color: '#fb7185', fontWeight: 700 }}>*</span>
                 </span>
                 {activeShipment && (
-                  <span className="text-xs font-mono text-emerald-500 dark:text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-0.5 rounded-md border border-emerald-500/20">
-                    Expected: {activeShipment.expectedWeightTons.toFixed(2)} Tons
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', fontWeight: 700, color: '#34d399', background: 'rgba(16,185,129,0.1)', padding: '0.15rem 0.5rem', borderRadius: '6px', border: '1px solid rgba(16,185,129,0.2)' }}>
+                    Expected: {activeShipment.expectedWeightTons.toFixed(2)} T
                   </span>
                 )}
               </label>
-
-              <div className="relative">
+              <div style={{ position: 'relative' }}>
+                <Scale size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: isDeviationAboveTenPercent ? '#fbbf24' : isValidWeightNumber ? '#34d399' : '#64748b', pointerEvents: 'none' }} />
                 <input
                   id={weightInputId}
                   type="number"
@@ -517,89 +507,58 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
                   value={actualWeightInput}
                   onChange={(e) => setActualWeightInput(e.target.value)}
                   placeholder="Enter scale reading in tons (e.g. 12.50)"
-                  style={{ paddingLeft: '3.25rem', paddingRight: '5.5rem' }}
-                  className={`w-full bg-[var(--input-bg)] border rounded-xl py-4 text-base font-mono font-bold text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all shadow-sm ${
-                    isDeviationAboveTenPercent
-                      ? 'border-amber-400/80 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 bg-amber-500/10'
-                      : isValidWeightNumber
-                      ? 'border-emerald-500/80 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20'
-                      : 'border-[var(--border-color)] focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20'
-                  }`}
+                  className="fit-input fit-input--lg"
+                  style={{
+                    paddingLeft: '2.75rem',
+                    paddingRight: '4.5rem',
+                    borderColor: isDeviationAboveTenPercent ? 'rgba(245,158,11,0.6)' : isValidWeightNumber ? 'rgba(16,185,129,0.6)' : undefined,
+                  }}
                   disabled={!activeShipment}
                 />
-                <Scale
-                  size={18}
-                  className={`absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none ${
-                    isDeviationAboveTenPercent
-                      ? 'text-amber-400'
-                      : isValidWeightNumber
-                      ? 'text-emerald-400'
-                      : 'text-slate-400'
-                  }`}
-                />
-                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-[var(--text-muted)] bg-slate-500/15 px-2.5 py-1 rounded-lg border border-[var(--border-color)] pointer-events-none">
+                <span style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', background: 'rgba(30,41,59,0.8)', padding: '0.2rem 0.55rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)', pointerEvents: 'none' }}>
                   TONS
                 </span>
               </div>
-
               {!isValidWeightNumber && (
-                <p className="text-xs text-[var(--text-muted)] flex items-center gap-1.5 mt-1">
-                  <HelpCircle size={13} className="text-slate-400" />
-                  <span>Enter a positive numeric weight value to enable verification.</span>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <HelpCircle size={12} />
+                  Enter a positive numeric weight value to enable verification.
                 </p>
               )}
             </div>
 
-            {/* Deviation Calculation Readout */}
+            {/* Deviation Bar */}
             {activeShipment && isValidWeightNumber && (
-              <div
-                className={`p-5 rounded-2xl border transition-all space-y-3 ${
-                  isDeviationAboveTenPercent
-                    ? 'bg-amber-500/10 border-amber-500/40 text-amber-600 dark:text-amber-200'
-                    : 'bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-200'
-                }`}
-              >
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold flex items-center gap-1.5">
-                    {isDeviationAboveTenPercent ? (
-                      <AlertTriangle size={16} className="text-amber-400" />
-                    ) : (
-                      <CheckCircle2 size={16} className="text-emerald-400" />
-                    )}
+              <div className={`fit-deviation-card ${isDeviationAboveTenPercent ? 'fit-deviation-card--warn' : 'fit-deviation-card--pass'}`}>
+                <div className="fit-deviation-header">
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: isDeviationAboveTenPercent ? '#fcd34d' : '#6ee7b7' }}>
+                    {isDeviationAboveTenPercent ? <AlertTriangle size={15} /> : <CheckCircle2 size={15} />}
                     Deviation Variance:
                   </span>
-                  <span className="font-mono font-bold text-sm">
-                    {weightDifference >= 0 ? '+' : ''}
-                    {weightDifference.toFixed(2)} Tons ({deviationPercent.toFixed(1)}%)
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: isDeviationAboveTenPercent ? '#fcd34d' : '#6ee7b7' }}>
+                    {weightDifference >= 0 ? '+' : ''}{weightDifference.toFixed(2)} T ({deviationPercent.toFixed(1)}%)
                   </span>
                 </div>
-                <div className="w-full bg-slate-500/20 h-2.5 rounded-full overflow-hidden border border-[var(--border-color)]">
+                <div className="fit-deviation-bar-track">
                   <div
-                    className={`h-full transition-all duration-300 ${
-                      isDeviationAboveTenPercent ? 'bg-amber-400' : 'bg-emerald-400'
-                    }`}
+                    className={`fit-deviation-bar-fill ${isDeviationAboveTenPercent ? 'fit-deviation-bar-fill--warn' : 'fit-deviation-bar-fill--pass'}`}
                     style={{ width: `${Math.min(100, (deviationPercent / 20) * 100)}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-xs text-[var(--text-muted)] font-mono">
+                <div className="fit-deviation-marks">
                   <span>0% Tolerance</span>
-                  <span className="text-amber-500 dark:text-amber-400 font-semibold">10% Threshold</span>
+                  <span style={{ color: '#fbbf24', fontWeight: 600 }}>10% Threshold</span>
                   <span>20%+ High Audit</span>
                 </div>
               </div>
             )}
 
-            {/* Optional Operator Audit Notes */}
-            <div className="space-y-2.5">
-              <label
-                htmlFor="operator-notes"
-                className="text-xs font-semibold text-[var(--text-secondary)] flex items-center justify-between"
-              >
-                <span>Weighmaster / Scale Notes — Optional</span>
+            {/* Operator Notes */}
+            <div className="fit-input-group">
+              <label htmlFor="operator-notes" className="fit-input-label">
+                <span>Weighmaster / Scale Notes â€” Optional</span>
                 {isDeviationAboveTenPercent && (
-                  <span className="text-xs text-amber-500 dark:text-amber-400 font-semibold">
-                    * Audit justification recommended
-                  </span>
+                  <span style={{ color: '#fbbf24', fontSize: '0.72rem', fontWeight: 600 }}>* Audit justification recommended</span>
                 )}
               </label>
               <textarea
@@ -612,221 +571,131 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
                     ? 'Explain cause of weight discrepancy (e.g. moisture loss, partial unloading, debris)...'
                     : 'Enter weigh-scale observations, truck bay notes, or seal verification comments...'
                 }
-                className="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl px-4 py-3 text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 resize-none transition-all shadow-sm"
+                className="fit-input"
+                style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', resize: 'none' }}
               />
             </div>
 
-            {/* Action Buttons */}
-            <div className="pt-3 flex flex-col sm:flex-row gap-4">
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '0.25rem' }}>
               <button
                 type="submit"
                 id="verify-finalize-btn"
                 disabled={isVerifyButtonDisabled}
-                className={`flex-1 py-4 px-6 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${
+                className={`fit-submit-btn ${
                   isVerifyButtonDisabled
-                    ? 'bg-slate-500/15 text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed'
+                    ? ''
                     : isDeviationAboveTenPercent
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-amber-500/20 active:scale-[0.99]'
-                    : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black shadow-emerald-500/20 active:scale-[0.99]'
+                    ? 'fit-submit-btn--warn'
+                    : 'fit-submit-btn--pass'
                 }`}
               >
                 {isSubmitting ? (
-                  <>
-                    <RefreshCw size={16} className="animate-spin" />
-                    <span>Verifying Scale Data...</span>
-                  </>
+                  <><RefreshCw size={16} className="animate-spin" /><span>Verifying Scale Data...</span></>
                 ) : (
-                  <>
-                    <ShieldCheck size={18} />
-                    <span>Verify & Finalize Record</span>
-                  </>
+                  <><ShieldCheck size={17} /><span>Verify & Finalize Record</span></>
                 )}
               </button>
-
-              <button
-                type="button"
-                onClick={handleResetTerminal}
-                className="px-6 py-4 rounded-2xl bg-slate-500/10 hover:bg-slate-500/20 text-[var(--text-secondary)] font-semibold text-xs border border-[var(--border-color)] transition-all flex items-center justify-center gap-2"
-              >
+              <button type="button" onClick={handleResetTerminal} className="fit-reset-btn">
                 <RefreshCw size={14} />
-                <span>Reset Form</span>
+                <span>Reset</span>
               </button>
             </div>
 
-            {/* Test Case 2 Status Helper Text */}
             {isVerifyButtonDisabled && (
-              <p className="text-xs text-[var(--text-muted)] text-center font-mono pt-1">
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
                 {!activeShipment
-                  ? '⚠️ Please search or select a valid Shipment UUID first.'
+                  ? 'âš ï¸ Please search or select a valid Shipment UUID first.'
                   : !isValidWeightNumber
-                  ? '🔒 "Verify & Finalize Record" button is disabled until a valid weight is entered.'
+                  ? 'ðŸ”’ "Verify & Finalize Record" button is disabled until a valid weight is entered.'
                   : ''}
               </p>
             )}
           </form>
         </div>
 
-        {/* Right Column: Inbound Manifest Card & Warnings */}
-        <div className="xl:col-span-6 space-y-7 min-w-0">
-          {/* TEST CASE 1 WARNING BANNER: Prominent Yellow Warning Banner when deviation > 10% */}
-          {activeShipment && isValidWeightNumber && isDeviationAboveTenPercent && (
-            <div
-              id="weight-discrepancy-warning-banner"
-              className="bg-amber-500/15 border-2 border-amber-400 rounded-3xl p-6 sm:p-7 text-amber-600 dark:text-amber-200 shadow-2xl shadow-amber-500/10 animate-fade-in"
-            >
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-2xl bg-amber-400 text-slate-950 shrink-0 font-bold mt-0.5 shadow-md">
-                  <AlertTriangle size={24} className="animate-bounce" />
-                </div>
-                <div className="space-y-2.5 flex-1">
-                  <h4 className="text-base font-black text-amber-600 dark:text-amber-300 uppercase tracking-wide">
-                    Weight Discrepancy Detected — Requires Manual Audit
-                  </h4>
-                  <p className="text-xs text-amber-700 dark:text-amber-200/90 leading-relaxed">
-                    The recorded actual weight (<strong>{parsedActualWeight.toFixed(2)} Tons</strong>)
-                    deviates by{' '}
-                    <strong className="underline decoration-amber-400 underline-offset-2">
-                      {deviationPercent.toFixed(1)}% ({weightDifference > 0 ? '+' : ''}
-                      {weightDifference.toFixed(2)} Tons)
-                    </strong>{' '}
-                    from the declared manifest expected weight (
-                    <strong>{expectedWeight.toFixed(2)} Tons</strong>), which exceeds the allowable
-                    10.0% operational tolerance threshold.
-                  </p>
-                  <div className="pt-2 flex flex-wrap items-center gap-2 text-xs font-mono">
-                    <span className="bg-amber-400/20 px-3 py-1 rounded-lg border border-amber-400/30 text-amber-700 dark:text-amber-300 font-semibold">
-                      FLAG: AUDIT_REQUIRED
-                    </span>
-                    <span className="bg-amber-400/20 px-3 py-1 rounded-lg border border-amber-400/30 text-amber-700 dark:text-amber-300 font-semibold">
-                      THRESHOLD: ±10.0%
-                    </span>
-                    <span className="bg-amber-400/20 px-3 py-1 rounded-lg border border-amber-400/30 text-amber-700 dark:text-amber-300 font-semibold">
-                      VARIANCE: {deviationPercent.toFixed(2)}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
+        {/* Right Column: Manifest Card & Receipts */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           {/* Shipment Manifest Card */}
           {activeShipment ? (
-            <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-xl space-y-6">
-              <div className="flex items-start justify-between gap-4 pb-5 border-b border-[var(--border-color)]">
-                <div className="space-y-1">
-                  <span className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)]">
-                    Inbound Manifest Record
-                  </span>
-                  <h3 className="text-xl font-bold font-mono text-[var(--text-primary)] flex items-center gap-2">
-                    <Hash size={20} className="text-indigo-400" />
-                    {activeShipment.shipmentId}
-                  </h3>
-                </div>
-                <span
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold border ${
-                    activeShipment.wasteType === 'Hazardous'
-                      ? 'bg-rose-500/15 text-rose-500 dark:text-rose-400 border-rose-500/30'
-                      : activeShipment.wasteType === 'Organic'
-                      ? 'bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 border-emerald-500/30'
-                      : activeShipment.wasteType === 'Recyclable'
-                      ? 'bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 border-cyan-500/30'
-                      : 'bg-amber-500/15 text-amber-500 dark:text-amber-400 border-amber-500/30'
-                  }`}
-                >
+            <div className="fit-panel">
+              <div className="fit-panel-header">
+                <Hash size={15} className="text-indigo-400" />
+                <h3 className="fit-panel-title">Inbound Manifest â€” {activeShipment.shipmentId}</h3>
+                <span style={{
+                  fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.6rem',
+                  borderRadius: '999px', border: '1px solid',
+                  ...(activeShipment.wasteType === 'Hazardous'
+                    ? { background: 'rgba(244,63,94,0.12)', borderColor: 'rgba(244,63,94,0.3)', color: '#fda4af' }
+                    : activeShipment.wasteType === 'Organic'
+                    ? { background: 'rgba(16,185,129,0.12)', borderColor: 'rgba(16,185,129,0.3)', color: '#6ee7b7' }
+                    : activeShipment.wasteType === 'Recyclable'
+                    ? { background: 'rgba(6,182,212,0.12)', borderColor: 'rgba(6,182,212,0.3)', color: '#67e8f9' }
+                    : { background: 'rgba(245,158,11,0.12)', borderColor: 'rgba(245,158,11,0.3)', color: '#fcd34d' }),
+                }}>
                   {activeShipment.wasteType}
                 </span>
               </div>
 
-              {/* Three Required Displays: Expected Weight, Declared Waste Type, Generator Name */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {/* Expected Weight Card */}
-                <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between space-y-3">
-                  <span className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
-                    <Scale size={15} className="text-emerald-400" />
+              {/* Stat Cards (like cs-metrics-grid) */}
+              <div className="fit-stats-grid">
+                <div className="fit-stat-card">
+                  <span className="fit-stat-label">
+                    <Scale size={14} style={{ color: '#34d399' }} />
                     Expected Weight
                   </span>
-                  <div>
-                    <span className="text-2xl font-mono font-extrabold text-[var(--text-primary)]">
-                      {activeShipment.expectedWeightTons.toFixed(2)}
-                    </span>
-                    <span className="text-xs font-mono text-[var(--text-muted)] ml-1.5 font-bold">Tons</span>
-                  </div>
-                  <span className="text-xs text-[var(--text-muted)] font-mono">
-                    {(activeShipment.expectedWeightTons * 1000).toLocaleString()} kg total
-                  </span>
+                  <p className="fit-stat-value">{activeShipment.expectedWeightTons.toFixed(2)}</p>
+                  <span className="fit-stat-sub">{(activeShipment.expectedWeightTons * 1000).toLocaleString()} kg total</span>
                 </div>
-
-                {/* Declared Waste Type Card */}
-                <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between space-y-3">
-                  <span className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
-                    <Layers size={15} className="text-cyan-400" />
+                <div className="fit-stat-card">
+                  <span className="fit-stat-label">
+                    <Layers size={14} style={{ color: '#38bdf8' }} />
                     Declared Waste
                   </span>
-                  <div>
-                    <span className="text-lg font-bold text-[var(--text-primary)]">
-                      {activeShipment.wasteType}
-                    </span>
-                  </div>
-                  <span className="text-xs text-cyan-500 dark:text-cyan-400 font-mono font-semibold">
-                    Verified Stream
-                  </span>
+                  <p className="fit-stat-value" style={{ fontSize: '1.05rem' }}>{activeShipment.wasteType}</p>
+                  <span className="fit-stat-sub" style={{ color: '#38bdf8' }}>Verified Stream</span>
                 </div>
-
-                {/* Generator Name Card */}
-                <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between space-y-3">
-                  <span className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
-                    <Building2 size={15} className="text-amber-400" />
+                <div className="fit-stat-card">
+                  <span className="fit-stat-label">
+                    <Building2 size={14} style={{ color: '#fbbf24' }} />
                     Generator
                   </span>
-                  <div>
-                    <span className="text-xs font-bold text-[var(--text-primary)] line-clamp-2 leading-relaxed">
-                      {activeShipment.generatorName}
-                    </span>
-                  </div>
-                  <span className="text-xs text-[var(--text-muted)] font-mono">
-                    Origin Verified
-                  </span>
+                  <p className="fit-stat-value" style={{ fontSize: '0.82rem', fontWeight: 700, lineHeight: 1.4 }}>{activeShipment.generatorName}</p>
+                  <span className="fit-stat-sub">Origin Verified</span>
                 </div>
               </div>
 
-              {/* Extended Manifest Details (Truck / Logistics Metadata) */}
-              <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-5 sm:p-6 space-y-3.5 text-xs shadow-sm">
-                <div className="flex items-center justify-between py-2 border-b border-[var(--border-color)]/70">
-                  <span className="text-[var(--text-secondary)] flex items-center gap-2">
-                    <Truck size={15} className="text-indigo-400" />
-                    Transport Vehicle:
+              {/* Logistics Detail Rows */}
+              <div className="fit-detail-block">
+                <div className="fit-detail-row">
+                  <span className="fit-detail-label">
+                    <Truck size={14} style={{ color: '#818cf8' }} />
+                    Transport Vehicle
                   </span>
-                  <span className="font-mono font-semibold text-[var(--text-primary)]">
-                    {activeShipment.vehicleRegistration || 'GJ-01-STANDARD'}
-                  </span>
+                  <span className="fit-detail-value">{activeShipment.vehicleRegistration || 'GJ-01-STANDARD'}</span>
                 </div>
-
-                <div className="flex items-center justify-between py-2 border-b border-[var(--border-color)]/70">
-                  <span className="text-[var(--text-secondary)] flex items-center gap-2">
-                    <ClipboardCheck size={15} className="text-emerald-400" />
-                    Security Seal #:
+                <div className="fit-detail-row">
+                  <span className="fit-detail-label">
+                    <ClipboardCheck size={14} style={{ color: '#34d399' }} />
+                    Security Seal #
                   </span>
-                  <span className="font-mono font-semibold text-emerald-500 dark:text-emerald-400">
-                    {activeShipment.sealNumber || 'SEAL-INTACT-01'}
-                  </span>
+                  <span className="fit-detail-value" style={{ color: '#34d399' }}>{activeShipment.sealNumber || 'SEAL-INTACT-01'}</span>
                 </div>
-
-                <div className="flex items-center justify-between py-2 border-b border-[var(--border-color)]/70">
-                  <span className="text-[var(--text-secondary)] flex items-center gap-2">
-                    <Building2 size={15} className="text-amber-400" />
-                    Origin Facility:
+                <div className="fit-detail-row">
+                  <span className="fit-detail-label">
+                    <Building2 size={14} style={{ color: '#fbbf24' }} />
+                    Origin Facility
                   </span>
-                  <span className="text-[var(--text-primary)] font-medium truncate max-w-xs">
+                  <span className="fit-detail-value" style={{ maxWidth: '16rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {activeShipment.originLocation || 'Regional Collection Center'}
                   </span>
                 </div>
-
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-[var(--text-secondary)] flex items-center gap-2">
-                    <Clock size={15} className="text-cyan-400" />
-                    Dispatch Time:
+                <div className="fit-detail-row">
+                  <span className="fit-detail-label">
+                    <Clock size={14} style={{ color: '#38bdf8' }} />
+                    Dispatch Time
                   </span>
-                  <span className="font-mono text-[var(--text-primary)] font-semibold">
+                  <span className="fit-detail-value">
                     {activeShipment.dispatchTimestamp
                       ? new Date(activeShipment.dispatchTimestamp).toLocaleTimeString()
                       : 'Just now'}
@@ -835,33 +704,34 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
               </div>
             </div>
           ) : (
-            <div className="bg-[var(--bg-card)] border border-dashed border-[var(--border-color)] rounded-3xl p-12 text-center space-y-5 shadow-sm">
-              <div className="w-16 h-16 rounded-2xl bg-slate-500/10 border border-[var(--border-color)] flex items-center justify-center mx-auto text-[var(--text-muted)]">
-                <FileText size={30} />
-              </div>
-              <div className="space-y-1.5">
-                <h4 className="text-base font-bold text-[var(--text-primary)]">No Manifest Selected</h4>
-                <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto leading-relaxed">
-                  Search for an incoming truck manifest UUID above or click one of the preset
-                  manifests to inspect expected weight and declared waste details.
-                </p>
+            <div className="fit-panel">
+              <div className="fit-empty-state">
+                <div className="fit-empty-icon">
+                  <FileText size={26} />
+                </div>
+                <div>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#e2e8f0', margin: '0 0 0.35rem' }}>No Manifest Selected</h4>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: '24rem', lineHeight: 1.5 }}>
+                    Search for an incoming truck manifest UUID above or click one of the preset manifests to inspect expected weight and declared waste details.
+                  </p>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Submission / Verification Success Receipt */}
+          {/* Success Receipt */}
           {submissionResult && submissionResult.success && (
-            <div className="bg-[var(--bg-card)] border-2 border-emerald-500/80 rounded-3xl p-7 sm:p-9 shadow-2xl shadow-emerald-500/10 space-y-6 animate-fade-in text-[var(--text-primary)]">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3.5">
-                  <div className="p-3 rounded-2xl bg-emerald-500 text-slate-950 font-bold shadow-md">
-                    <CheckCircle2 size={24} />
+            <div className="fit-receipt">
+              <div className="fit-receipt-header">
+                <div className="fit-receipt-title-group">
+                  <div className="fit-receipt-icon">
+                    <CheckCircle2 size={22} />
                   </div>
                   <div>
-                    <h4 className="text-base font-bold text-[var(--text-primary)]">
+                    <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#f8fafc', margin: 0 }}>
                       Weigh-Station Record Finalized
                     </h4>
-                    <p className="text-xs text-emerald-500 dark:text-emerald-400 font-mono mt-0.5">
+                    <p style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: '#34d399', margin: '0.15rem 0 0' }}>
                       Receipt: {submissionResult.receiptId}
                     </p>
                   </div>
@@ -869,49 +739,42 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="px-4 py-2 rounded-xl bg-slate-500/10 hover:bg-slate-500/20 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-mono flex items-center gap-1.5 border border-[var(--border-color)] transition-all shadow-sm"
+                  className="fit-reset-btn"
+                  style={{ padding: '0.5rem 0.85rem', fontSize: '0.75rem' }}
                 >
-                  <Printer size={14} />
-                  <span>Print Ticket</span>
+                  <Printer size={13} />
+                  <span>Print</span>
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[var(--bg-surface)] p-5 rounded-2xl border border-[var(--border-color)] text-xs font-mono shadow-sm">
+              <div className="fit-receipt-grid">
                 <div>
-                  <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider block font-semibold">EXPECTED</span>
-                  <span className="text-[var(--text-primary)] font-bold text-sm">
+                  <p className="fit-receipt-cell-label">EXPECTED</p>
+                  <p className="fit-receipt-cell-value" style={{ color: 'var(--text-primary)' }}>
                     {submissionResult.expectedWeightTons?.toFixed(2)} T
-                  </span>
+                  </p>
                 </div>
                 <div>
-                  <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider block font-semibold">ACTUAL</span>
-                  <span className="text-emerald-500 dark:text-emerald-400 font-bold text-sm">
+                  <p className="fit-receipt-cell-label">ACTUAL</p>
+                  <p className="fit-receipt-cell-value" style={{ color: '#34d399' }}>
                     {submissionResult.actualWeightTons?.toFixed(2)} T
-                  </span>
+                  </p>
                 </div>
                 <div>
-                  <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider block font-semibold">VARIANCE</span>
-                  <span
-                    className={`font-bold text-sm ${
-                      submissionResult.hasDiscrepancy ? 'text-amber-500 dark:text-amber-400' : 'text-emerald-500 dark:text-emerald-400'
-                    }`}
-                  >
+                  <p className="fit-receipt-cell-label">VARIANCE</p>
+                  <p className="fit-receipt-cell-value" style={{ color: submissionResult.hasDiscrepancy ? '#fbbf24' : '#34d399' }}>
                     {submissionResult.deviationPercent?.toFixed(1)}%
-                  </span>
+                  </p>
                 </div>
                 <div>
-                  <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider block font-semibold">AUDIT STATUS</span>
-                  <span
-                    className={`font-bold text-sm ${
-                      submissionResult.hasDiscrepancy ? 'text-amber-500 dark:text-amber-400' : 'text-emerald-500 dark:text-emerald-400'
-                    }`}
-                  >
+                  <p className="fit-receipt-cell-label">AUDIT STATUS</p>
+                  <p className="fit-receipt-cell-value" style={{ color: submissionResult.hasDiscrepancy ? '#fbbf24' : '#34d399' }}>
                     {submissionResult.hasDiscrepancy ? 'AUDIT_LOGGED' : 'CLEARED'}
-                  </span>
+                  </p>
                 </div>
               </div>
 
-              <p className="text-xs text-[var(--text-secondary)]">{submissionResult.message}</p>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{submissionResult.message}</p>
             </div>
           )}
         </div>
@@ -919,3 +782,4 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
     </div>
   );
 };
+
