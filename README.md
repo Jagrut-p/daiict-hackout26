@@ -98,6 +98,10 @@ BACKEND SETUP (Run from repository root):
   *Note: Backend server runs at http://127.0.0.1:8000. Interactive Swagger docs
   are available at http://127.0.0.1:8000/docs.
 
+  *Note on migrations-reference/: The migrations-reference/ directory contains legacy/
+  superseded PostgreSQL schema scripts kept solely as architectural reference;
+  the active hackathon application runs 100% in-memory with zero external DB dependencies.
+
 FRONTEND SETUP (Run from Frontend/ directory):
   cd Frontend
   npm install
