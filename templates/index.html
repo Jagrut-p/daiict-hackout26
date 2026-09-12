@@ -57,6 +57,17 @@
       background: #15803d;
     }
 
+    .btn-reset {
+      background: #64748b;
+      font-size: 0.85em;
+      padding: 6px 12px;
+      margin-bottom: 15px;
+    }
+
+    .btn-reset:hover {
+      background: #475569;
+    }
+
     .badge-card {
       background: #f0fdf4;
       border: 2px solid #86efac;
@@ -100,6 +111,7 @@
 
   <h1>🌱 Waste-to-Carbon Value Chain Tracker</h1>
   <p class="sub">Carbon-Aware Facility Routing & Auditable MRV Engine</p>
+  <button class="btn-reset" onclick="resetDemo()">🔄 Reset Demo State</button>
 
   <div class="card">
     <h3>1. Carbon-Aware Facility Matching</h3>
@@ -156,6 +168,19 @@
       map.invalidateSize();
       mGen.openPopup();
     }, 250);
+
+    function resetDemo() {
+      const newId = 'SHIP-' + Math.floor(1000 + Math.random() * 9000);
+      document.getElementById('shipment-id').innerText = newId;
+      document.getElementById('shipment-status').innerHTML = '';
+      document.getElementById('mrv-certificate').innerHTML = '';
+      document.getElementById('match-results').innerHTML = '';
+      if (activeRoute) {
+        map.removeLayer(activeRoute);
+        activeRoute = null;
+      }
+      mGen.openPopup();
+    }
 
     async function runMatch() {
       const container = document.getElementById('match-results');
