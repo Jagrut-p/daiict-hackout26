@@ -1,4 +1,4 @@
-# REFERENCE ONLY: This script is NOT currently wired into the app and requires an external PostgreSQL/PostGIS setup that does not exist in this in-memory hackathon build.
+# LEGACY / SUPERSEDED REFERENCE ONLY: This script references a past PostgreSQL/PostGIS schema that is not currently wired into the app. The active backend (main.py) uses an in-memory datastore by design for this hackathon and does not require an external database.
 import psycopg2
 
 CONN_STR = "postgresql://postgres:postgres@localhost:5432/waste_carbon_db"
