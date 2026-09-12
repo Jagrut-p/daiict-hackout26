@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Waste-to-Carbon Value Chain Tracker</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 0 20px;
+      color: #1e293b;
+      background: #f8fafc;
+    }
+
+    h1 {
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+
+    p.sub {
+      color: #64748b;
+      margin-top: 0;
+    }
+
+    .card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    button {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-green {
+      background: #16a34a;
+    }
+
+    .btn-green:hover {
+      background: #15803d;
+    }
+
+    .badge-card {
+      background: #f0fdf4;
+      border: 2px solid #86efac;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .facility-row {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 10px;
+      background: #fafafa;
+    }
+
+    .highlight {
+      color: #16a34a;
+      font-weight: bold;
+    }
+
+    code {
+      background: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    #map {
+      height: 320px;
+      width: 100%;
+      border-radius: 8px;
+      margin-top: 15px;
+      border: 1px solid #cbd5e1;
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>🌱 Waste-to-Carbon Value Chain Tracker</h1>
+  <p class="sub">Carbon-Aware Facility Routing & Auditable MRV Engine</p>
+
+  <div class="card">
+    <h3>1. Carbon-Aware Facility Matching</h3>
+    <p>Target Generator ID: <code>gen_1</code> (Hotel Grand Organic Waste — 10 Tons)</p>
+    <button onclick="runMatch()">Find Best Climate Facility</button>
+    <div id="match-results"></div>
+    <div id="map"></div>
+  </div>
+
+  <div class="card">
+    <h3>2. Dispatch Shipment</h3>
+    <p>Selected Facility ID: <input id="selected-facility" value="fac_2" style="padding:6px; width:100px;"> (Clean
+      Biogas / AD)</p>
+    <p>Shipment UUID: <code id="shipment-id">SHIP-1001</code></p>
+    <button onclick="createShipment()">Lock & Dispatch Pickup</button>
+    <div id="shipment-status" style="margin-top:10px;"></div>
+  </div>
+
+  <div class="card">
+    <h3>3. Generate Auditable MRV Certificate</h3>
+    <button class="btn-green" onclick="generateMRV()">Issue Climate Impact Record</button>
+    <div id="mrv-certificate" style="margin-top:15px;"></div>
+  </div>
+
+  <script>
+    const map = L.map('map');
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // Generator Marker (Hotel Grand)
+    const mGen = L.marker([23.02, 72.57]).addTo(map)
+      .bindPopup("<b>Hotel Grand (gen_1)</b><br>10 Tons Organic Waste");
+
+    // Facility A Marker (Dirty/Near)
+    const mFacA = L.circleMarker([23.03, 72.58], { color: '#ef4444', fillColor: '#f87171', fillOpacity: 0.8, radius: 9 }).addTo(map)
+      .bindPopup("<b>Facility A (fac_1)</b><br>1.51 km | Dirty Composting<br>Carbon Cost: 1.81 tCO₂e");
+
+    // Facility B Marker (Clean/Far)
+    const mFacB = L.circleMarker([23.20, 72.65], { color: '#16a34a', fillColor: '#4ade80', fillOpacity: 0.8, radius: 9 }).addTo(map)
+      .bindPopup("<b>Facility B (fac_2) - OPTIMAL</b><br>21.62 km | Clean Biogas/AD<br>Carbon Cost: 0.69 tCO₂e");
+
+    // Fit map bounds to show all markers
+    const bounds = L.latLngBounds([
+      [23.02, 72.57],
+      [23.03, 72.58],
+      [23.20, 72.65]
+    ]);
+    map.fitBounds(bounds, { padding: [40, 40] });
+
+    let activeRoute = null;
+
+    setTimeout(() => {
+      map.invalidateSize();
+      mGen.openPopup();
+    }, 250);
+
+    async function runMatch() {
+      const container = document.getElementById('match-results');
+      container.innerHTML = '<p style="color:#64748b;">Finding facilities...</p>';
+
+      try {
+        const res = await fetch('/facilities/match?generator_id=gen_1');
+        if (!res.ok) {
+          const errData = await res.json();
+          container.innerHTML = `<p style="color:#dc2626;">Error ${res.status}: ${JSON.stringify(errData)}</p>`;
+          return;
+        }
+
+        const data = await res.json();
+        const facilities = Array.isArray(data) ? data : (data.ranked_facilities || data.matches || []);
+
+        if (facilities.length === 0) {
+          container.innerHTML = '<p style="color:#dc2626;">No matching facilities found. Did you run seed.py?</p>';
+          return;
+        }
+
+        // Draw animated green path to the winning facility (Facility B)
+        if (activeRoute) {
+          map.removeLayer(activeRoute);
+        }
+        activeRoute = L.polyline([[23.02, 72.57], [23.20, 72.65]], {
+          color: '#16a34a',
+          weight: 4,
+          dashArray: '8, 8',
+          opacity: 0.9
+        }).addTo(map);
+
+        mFacB.openPopup();
+
+        let html = '<h4 style="margin-top:15px;">Ranked Facilities (Lowest Climate Penalty First):</h4>';
+        facilities.forEach((f, idx) => {
+          const name = f.facility_name || f.name || 'Facility';
+          const id = f.facility_id || f.id || 'N/A';
+          const dist = f.distance_km ?? f.distance ?? 'N/A';
+          const transport = f.transport_emissions_tCO2e ?? f.transport_emissions ?? 'N/A';
+          const proc = f.processing_emissions_tCO2e ?? f.processing_emissions ?? 'N/A';
+          const total = f.total_emissions_penalty ?? f.total_emissions ?? 'N/A';
+
+          html += `
+            <div class="facility-row">
+              <strong>#${idx + 1}: ${name}</strong> (ID: <code>${id}</code>)<br>
+              Distance: ${dist} km | Transport: ${transport} tCO₂e | Processing: ${proc} tCO₂e<br>
+              <span class="highlight">Total Carbon Cost: ${total} tCO₂e</span>
+            </div>`;
+        });
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = `<p style="color:#dc2626;">Fetch error: ${err.message}</p>`;
+      }
+    }
+
+    async function createShipment() {
+      const facId = document.getElementById('selected-facility').value;
+      const uuid = document.getElementById('shipment-id').innerText;
+      const res = await fetch('/shipments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shipment_uuid: uuid, generator_id: 'gen_1', facility_id: facId })
+      });
+      const data = await res.json();
+      document.getElementById('shipment-status').innerHTML = `<p style="color:#16a34a; font-weight:600;">✅ Shipment status: ${(data.status || 'CREATED').toUpperCase()} for ${uuid}</p>`;
+    }
+
+    async function generateMRV() {
+      const uuid = document.getElementById('shipment-id').innerText;
+      const res = await fetch(`/carbon/calculate?shipment_uuid=${uuid}`, { method: 'POST' });
+      const cert = await res.json();
+      document.getElementById('mrv-certificate').innerHTML = `
+        <div class="badge-card">
+          <h3 style="margin-top:0; color:#15803d;">📜 Certificate: ${cert.certificate_id || cert.id}</h3>
+          <small style="color:#64748b;">${cert.label || 'Climate Impact Record'}</small>
+          <ul style="line-height: 1.8; margin-top: 10px;">
+            <li><strong>Diverted Waste:</strong> ${cert.diverted_tons ?? '10.0'} Tons</li>
+            <li><strong>Avoided Landfill Methane:</strong> ${cert.avoided_landfill_tCO2e ?? 'N/A'} tCO₂e</li>
+            <li><strong>Clean Energy Displacement:</strong> ${cert.displacement_tCO2e ?? 'N/A'} tCO₂e</li>
+            <li><strong>Transport Footprint:</strong> -${cert.transport_tCO2e ?? 'N/A'} tCO₂e</li>
+            <li><strong>Net Climate Benefit:</strong> <span style="font-size:1.1em; color:#15803d; font-weight:bold;">${cert.net_climate_benefit_tCO2e ?? 'N/A'} tCO₂e</span></li>
+            <li><strong>Methodology Version:</strong> ${cert.calculation_version_id || 'v1.0'} (${cert.data_tier || 'Tier 2'})</li>
+          </ul>
+        </div>`;
+    }
+  </script>
+</body>
+
+</html>
