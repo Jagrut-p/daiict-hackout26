@@ -20,10 +20,12 @@ logger = logging.getLogger("uvicorn.error")
 
 # Google OR-Tools CVRP Route Optimization Engine
 try:
-    from optimizer import solve_cvrp_route
+    from optimizer import solve_cvrp_route, CIRCUITY_FACTOR, TRUCK_EF_TCO2E_PER_KM
     ORTOOLS_AVAILABLE = True
 except ImportError:
     solve_cvrp_route = None
+    CIRCUITY_FACTOR = 1.35
+    TRUCK_EF_TCO2E_PER_KM = 0.0009
     ORTOOLS_AVAILABLE = False
     logger.warning("WARNING: Google OR-Tools is not installed. /routes/optimize will return 503 until 'ortools' is installed.")
 
@@ -535,10 +537,17 @@ def optimize_routes(payload: RouteOptimizeIn):
             detail="Google OR-Tools CVRP solver is not available on server. Install ortools package."
         )
 
+    if not payload.generator_ids:
+        raise HTTPException(
+            status_code=422,
+            detail="At least one generator pickup stop is required for route optimization."
+        )
+
     if payload.facility_id not in FACILITIES:
         raise HTTPException(status_code=404, detail=f"Facility '{payload.facility_id}' not found")
     facility = FACILITIES[payload.facility_id]
 
+    # Build pickup stops list strictly for generators (facility is excluded from CVRP solving)
     stops = []
     for gid in payload.generator_ids:
         if gid not in GENERATORS:
@@ -553,16 +562,6 @@ def optimize_routes(payload: RouteOptimizeIn):
             "is_facility": False
         })
 
-    # Terminal stop at destination facility
-    stops.append({
-        "id": facility["id"],
-        "name": facility["name"],
-        "lat": float(facility["lat"]),
-        "lng": float(facility["lng"]),
-        "demand_tons": 0.0,
-        "is_facility": True
-    })
-
     if payload.depot:
         depot_coords = (float(payload.depot.lat), float(payload.depot.lng))
     elif payload.depot_lat is not None and payload.depot_lng is not None:
@@ -572,19 +571,49 @@ def optimize_routes(payload: RouteOptimizeIn):
         depot_coords = (23.1885, 72.6288)
 
     vehicle_cap = float(payload.vehicle_capacity_tons or 10.0)
+    # 1. Solve CVRP for generator pickups ONLY
     result = solve_cvrp_route(depot_coords, stops, vehicle_capacity_tons=vehicle_cap)
 
     if not result:
         raise HTTPException(
             status_code=422,
-            detail="No feasible CVRP route found. Demands may exceed vehicle capacity."
+            detail="No feasible CVRP route found. Total pickups may exceed vehicle capacity."
         )
+
+    ordered_route = list(result.get("ordered_route", []))
+
+    # 2. Identify coordinates of the last pickup stop to compute final transport leg to facility
+    if len(ordered_route) > 1:
+        last_stop = ordered_route[-1]
+        last_lat = float(last_stop.get("lat", depot_coords[0]))
+        last_lng = float(last_stop.get("lng", depot_coords[1]))
+    else:
+        last_lat, last_lng = depot_coords[0], depot_coords[1]
+
+    fac_lat = float(facility["lat"])
+    fac_lng = float(facility["lng"])
+    final_leg_km = round(haversine_km(last_lat, last_lng, fac_lat, fac_lng) * CIRCUITY_FACTOR, 2)
+    final_leg_emissions = round(final_leg_km * TRUCK_EF_TCO2E_PER_KM, 4)
+
+    total_distance_km = round(float(result.get("total_distance_km", 0.0)) + final_leg_km, 2)
+    total_transport_emissions = round(float(result.get("total_transport_emissions_tCO2e", 0.0)) + final_leg_emissions, 4)
+
+    # 3. Append destination facility as the fixed final leg of the route
+    ordered_route.append({
+        "step": "Facility Drop-off",
+        "id": facility["id"],
+        "name": facility["name"],
+        "lat": fac_lat,
+        "lng": fac_lng,
+        "demand_tons": 0.0,
+        "is_facility": True
+    })
 
     return {
         "status": "optimized",
-        "ordered_route": result["ordered_route"],
-        "total_distance_km": result["total_distance_km"],
-        "total_transport_emissions_tCO2e": result["total_transport_emissions_tCO2e"],
+        "ordered_route": ordered_route,
+        "total_distance_km": total_distance_km,
+        "total_transport_emissions_tCO2e": total_transport_emissions,
         "facility": facility,
         "depot": {"lat": depot_coords[0], "lng": depot_coords[1]}
     }
