@@ -8,40 +8,47 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      max-width: 900px;
-      margin: 30px auto;
-      padding: 0 20px;
-      color: #1e293b;
-      background: #f8fafc;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: #f4f6f9;
+      color: #333;
     }
 
-    h1 {
-      color: #0f172a;
-      margin-bottom: 4px;
-    }
-
-    p.sub {
-      color: #64748b;
-      margin-top: 0;
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
     }
 
     .card {
-      background: #fff;
-      padding: 20px;
+      background: white;
       border-radius: 8px;
-      border: 1px solid #e2e8f0;
+      padding: 20px;
       margin-bottom: 20px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #1e293b;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 1.25rem;
+      color: #0f172a;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 8px;
     }
 
     button {
       background: #2563eb;
-      color: #fff;
+      color: white;
       border: none;
       padding: 10px 18px;
-      border-radius: 6px;
+      font-size: 14px;
       font-weight: 600;
+      border-radius: 6px;
       cursor: pointer;
     }
 
@@ -50,222 +57,199 @@
     }
 
     .btn-green {
-      background: #16a34a;
+      background: #059669;
     }
 
     .btn-green:hover {
-      background: #15803d;
+      background: #047857;
     }
 
-    .btn-reset {
-      background: #64748b;
-      font-size: 0.85em;
-      padding: 6px 12px;
-      margin-bottom: 15px;
+    .btn-purple {
+      background: #7c3aed;
     }
 
-    .btn-reset:hover {
-      background: #475569;
-    }
-
-    .badge-card {
-      background: #f0fdf4;
-      border: 2px solid #86efac;
-      border-radius: 8px;
-      padding: 20px;
-    }
-
-    .facility-row {
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      padding: 12px;
-      margin-top: 10px;
-      background: #fafafa;
-    }
-
-    .highlight {
-      color: #16a34a;
-      font-weight: bold;
-    }
-
-    code {
-      background: #e2e8f0;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.9em;
+    .btn-purple:hover {
+      background: #6d28d9;
     }
 
     #map {
-      height: 320px;
-      width: 100%;
+      height: 350px;
       border-radius: 8px;
       margin-top: 15px;
-      border: 1px solid #cbd5e1;
-      position: relative;
-      z-index: 1;
+    }
+
+    .log-box {
+      background: #0f172a;
+      color: #38bdf8;
+      padding: 14px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 13px;
+      margin-top: 12px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      background: #e2e8f0;
+      color: #475569;
     }
   </style>
 </head>
 
 <body>
+  <div class="container">
+    <div class="card">
+      <h1>Waste-to-Carbon Value Chain Tracker</h1>
+      <p>Production MRV & Route Optimization Engine | <span class="badge">PostgreSQL 16 + PostGIS 3.4</span> <span
+          class="badge">IPCC Tier 2</span></p>
+    </div>
 
-  <h1>🌱 Waste-to-Carbon Value Chain Tracker</h1>
-  <p class="sub">Carbon-Aware Facility Routing & Auditable MRV Engine</p>
-  <button class="btn-reset" onclick="resetDemo()">🔄 Reset Demo State</button>
+    <!-- Section 10 & 11: Matching & CVRP -->
+    <div class="card">
+      <h2>1. Carbon-Aware Routing & Multi-Stop CVRP</h2>
+      <p>Depot: <strong>Ahmedabad Central Hub (23.01, 72.56)</strong> | Truck Capacity: <strong>10.0 Tonnes</strong></p>
+      <button onclick="runMatching()">Find Best Climate Facility (PostGIS)</button>
+      <button class="btn-purple" onclick="runCVRPOptimizer()">Solve Multi-Stop CVRP (OR-Tools)</button>
+      <div id="map"></div>
+      <div id="matchingResults" class="log-box" style="display:none;"></div>
+    </div>
 
-  <div class="card">
-    <h3>1. Carbon-Aware Facility Matching</h3>
-    <p>Target Generator ID: <code>gen_1</code> (Hotel Grand Organic Waste — 10 Tons)</p>
-    <button onclick="runMatch()">Find Best Climate Facility</button>
-    <div id="match-results"></div>
-    <div id="map"></div>
-  </div>
+    <div class="grid-2">
+      <!-- Section 6, 8, 9: Dispatch & Offline Sync -->
+      <div class="card">
+        <h2>2. Shipments & Offline Field Sync</h2>
+        <p>Simulate field collector syncing intermittent offline loads.</p>
+        <button onclick="syncShipments()">Sync Offline Batch (POST /shipments/sync)</button>
+        <div id="syncLog" class="log-box" style="display:none;"></div>
+      </div>
 
-  <div class="card">
-    <h3>2. Dispatch Shipment</h3>
-    <p>Selected Facility ID: <input id="selected-facility" value="fac_2" style="padding:6px; width:100px;"> (Clean
-      Biogas / AD)</p>
-    <p>Shipment UUID: <code id="shipment-id">SHIP-1001</code></p>
-    <button onclick="createShipment()">Lock & Dispatch Pickup</button>
-    <div id="shipment-status" style="margin-top:10px;"></div>
-  </div>
+      <!-- Section 15.1: Circular Economy Revenue Split -->
+      <div class="card">
+        <h2>3. Circular-Economy Revenue Ledger</h2>
+        <p>Automated ₹1,000 tipping fee split (60% Logistics, 20% Facility, 10% Worker, 10% Platform).</p>
+        <button class="btn-purple" onclick="settleRevenue()">Settle Revenue (POST /revenue/settle)</button>
+        <div id="revLog" class="log-box" style="display:none;"></div>
+      </div>
+    </div>
 
-  <div class="card">
-    <h3>3. Generate Auditable MRV Certificate</h3>
-    <button class="btn-green" onclick="generateMRV()">Issue Climate Impact Record</button>
-    <div id="mrv-certificate" style="margin-top:15px;"></div>
+    <!-- Section 12 & 13: IPCC Tier 2 Certificate -->
+    <div class="card">
+      <h2>4. Auditable MRV Certificate (IPCC Tier 2)</h2>
+      <button class="btn-green" onclick="generateCertificate()">Generate & Audit Certificate (SHIP-9726)</button>
+      <div id="certLog" class="log-box" style="display:none;"></div>
+    </div>
   </div>
 
   <script>
-    const map = L.map('map');
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
+    const map = L.map('map').setView([23.02, 72.57], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
 
-    // Generator Marker (Hotel Grand)
-    const mGen = L.marker([23.02, 72.57]).addTo(map)
-      .bindPopup("<b>Hotel Grand (gen_1)</b><br>10 Tons Organic Waste");
+    // Initial Generator & Facilities Markers
+    L.marker([23.02, 72.57]).addTo(map).bindPopup("<b>Generator 1:</b> Hotel Grand (10t)");
+    L.marker([23.03, 72.58]).addTo(map).bindPopup("<b>Facility A:</b> Near Composting (1.51 km)");
+    L.marker([23.20, 72.65]).addTo(map).bindPopup("<b>Facility B:</b> Far Biogas / AD (21.55 km)");
 
-    // Facility A Marker (Dirty/Near)
-    const mFacA = L.circleMarker([23.03, 72.58], { color: '#ef4444', fillColor: '#f87171', fillOpacity: 0.8, radius: 9 }).addTo(map)
-      .bindPopup("<b>Facility A (fac_1)</b><br>1.51 km | Dirty Composting<br>Carbon Cost: 1.81 tCO₂e");
+    let currentRouteLine = null;
+    let dynamicRouteMarkers = [];
 
-    // Facility B Marker (Clean/Far)
-    const mFacB = L.circleMarker([23.20, 72.65], { color: '#16a34a', fillColor: '#4ade80', fillOpacity: 0.8, radius: 9 }).addTo(map)
-      .bindPopup("<b>Facility B (fac_2) - OPTIMAL</b><br>21.62 km | Clean Biogas/AD<br>Carbon Cost: 0.69 tCO₂e");
+    async function runMatching() {
+      const res = await fetch('/facilities/match?generator_id=gen_1');
+      const data = await res.json();
+      const box = document.getElementById('matchingResults');
+      box.style.display = 'block';
+      box.innerText = JSON.stringify(data, null, 2);
 
-    // Fit map bounds to show all markers
-    const bounds = L.latLngBounds([
-      [23.02, 72.57],
-      [23.03, 72.58],
-      [23.20, 72.65]
-    ]);
-    map.fitBounds(bounds, { padding: [40, 40] });
+      if (currentRouteLine) map.removeLayer(currentRouteLine);
+      dynamicRouteMarkers.forEach(m => map.removeLayer(m));
+      dynamicRouteMarkers = [];
 
-    let activeRoute = null;
-
-    setTimeout(() => {
-      map.invalidateSize();
-      mGen.openPopup();
-    }, 250);
-
-    function resetDemo() {
-      const newId = 'SHIP-' + Math.floor(1000 + Math.random() * 9000);
-      document.getElementById('shipment-id').innerText = newId;
-      document.getElementById('shipment-status').innerHTML = '';
-      document.getElementById('mrv-certificate').innerHTML = '';
-      document.getElementById('match-results').innerHTML = '';
-      if (activeRoute) {
-        map.removeLayer(activeRoute);
-        activeRoute = null;
-      }
-      mGen.openPopup();
+      currentRouteLine = L.polyline([[23.02, 72.57], [23.20, 72.65]], { color: '#059669', weight: 4 }).addTo(map);
+      map.fitBounds(currentRouteLine.getBounds());
     }
 
-    async function runMatch() {
-      const container = document.getElementById('match-results');
-      container.innerHTML = '<p style="color:#64748b;">Finding facilities...</p>';
-
-      try {
-        const res = await fetch('/facilities/match?generator_id=gen_1');
-        if (!res.ok) {
-          const errData = await res.json();
-          container.innerHTML = `<p style="color:#dc2626;">Error ${res.status}: ${JSON.stringify(errData)}</p>`;
-          return;
-        }
-
-        const data = await res.json();
-        const facilities = Array.isArray(data) ? data : (data.ranked_facilities || data.matches || []);
-
-        if (facilities.length === 0) {
-          container.innerHTML = '<p style="color:#dc2626;">No matching facilities found. Did you run seed.py?</p>';
-          return;
-        }
-
-        // Draw animated green path to the winning facility (Facility B)
-        if (activeRoute) {
-          map.removeLayer(activeRoute);
-        }
-        activeRoute = L.polyline([[23.02, 72.57], [23.20, 72.65]], {
-          color: '#16a34a',
-          weight: 4,
-          dashArray: '8, 8',
-          opacity: 0.9
-        }).addTo(map);
-
-        mFacB.openPopup();
-
-        let html = '<h4 style="margin-top:15px;">Ranked Facilities (Lowest Climate Penalty First):</h4>';
-        facilities.forEach((f, idx) => {
-          const name = f.facility_name || f.name || 'Facility';
-          const id = f.facility_id || f.id || 'N/A';
-          const dist = f.distance_km ?? f.distance ?? 'N/A';
-          const transport = f.transport_emissions_tCO2e ?? f.transport_emissions ?? 'N/A';
-          const proc = f.processing_emissions_tCO2e ?? f.processing_emissions ?? 'N/A';
-          const total = f.total_emissions_penalty ?? f.total_emissions ?? 'N/A';
-
-          html += `
-            <div class="facility-row">
-              <strong>#${idx + 1}: ${name}</strong> (ID: <code>${id}</code>)<br>
-              Distance: ${dist} km | Transport: ${transport} tCO₂e | Processing: ${proc} tCO₂e<br>
-              <span class="highlight">Total Carbon Cost: ${total} tCO₂e</span>
-            </div>`;
-        });
-        container.innerHTML = html;
-      } catch (err) {
-        container.innerHTML = `<p style="color:#dc2626;">Fetch error: ${err.message}</p>`;
-      }
-    }
-
-    async function createShipment() {
-      const facId = document.getElementById('selected-facility').value;
-      const uuid = document.getElementById('shipment-id').innerText;
-      const res = await fetch('/shipments', {
+    async function runCVRPOptimizer() {
+      const res = await fetch('/routes/optimize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shipment_uuid: uuid, generator_id: 'gen_1', facility_id: facId })
+        body: JSON.stringify({
+          vehicle_id: "veh_1",
+          generator_ids: ["gen_1", "gen_2", "gen_3"],
+          facility_id: "fac_2"
+        })
       });
       const data = await res.json();
-      document.getElementById('shipment-status').innerHTML = `<p style="color:#16a34a; font-weight:600;">✅ Shipment status: ${(data.status || 'CREATED').toUpperCase()} for ${uuid}</p>`;
+      const box = document.getElementById('matchingResults');
+      box.style.display = 'block';
+      box.innerText = "OR-TOOLS CVRP ROUTE OPTIMIZED:\n" + JSON.stringify(data, null, 2);
+
+      if (currentRouteLine) map.removeLayer(currentRouteLine);
+      dynamicRouteMarkers.forEach(m => map.removeLayer(m));
+      dynamicRouteMarkers = [];
+
+      const coords = [];
+      data.stops_sequence.forEach(stop => {
+        if (stop.lat && stop.lng) {
+          coords.push([stop.lat, stop.lng]);
+          const m = L.marker([stop.lat, stop.lng]).addTo(map)
+            .bindPopup(`<b>${stop.step}:</b> ${stop.name} (${stop.demand_tons}t)`);
+          dynamicRouteMarkers.push(m);
+        } else if (stop.step === "Depot Start") {
+          coords.push([23.01, 72.56]);
+          const m = L.marker([23.01, 72.56]).addTo(map).bindPopup("<b>Depot Start:</b> Central Logistics Hub");
+          dynamicRouteMarkers.push(m);
+        }
+      });
+
+      // Terminal destination: Facility B (Anaerobic Digestion)
+      coords.push([23.20, 72.65]);
+
+      currentRouteLine = L.polyline(coords, { color: '#7c3aed', weight: 4, dashArray: '6, 6' }).addTo(map);
+      map.fitBounds(currentRouteLine.getBounds());
     }
 
-    async function generateMRV() {
-      const uuid = document.getElementById('shipment-id').innerText;
-      const res = await fetch(`/carbon/calculate?shipment_uuid=${uuid}`, { method: 'POST' });
-      const cert = await res.json();
-      document.getElementById('mrv-certificate').innerHTML = `
-        <div class="badge-card">
-          <h3 style="margin-top:0; color:#15803d;">📜 Certificate: ${cert.certificate_id || cert.id}</h3>
-          <small style="color:#64748b;">${cert.label || 'Climate Impact Record'}</small>
-          <ul style="line-height: 1.8; margin-top: 10px;">
-            <li><strong>Diverted Waste:</strong> ${cert.diverted_tons ?? '10.0'} Tons</li>
-            <li><strong>Avoided Landfill Methane:</strong> ${cert.avoided_landfill_tCO2e ?? 'N/A'} tCO₂e</li>
-            <li><strong>Clean Energy Displacement:</strong> ${cert.displacement_tCO2e ?? 'N/A'} tCO₂e</li>
-            <li><strong>Transport Footprint:</strong> -${cert.transport_tCO2e ?? 'N/A'} tCO₂e</li>
-            <li><strong>Net Climate Benefit:</strong> <span style="font-size:1.1em; color:#15803d; font-weight:bold;">${cert.net_climate_benefit_tCO2e ?? 'N/A'} tCO₂e</span></li>
-            <li><strong>Methodology Version:</strong> ${cert.calculation_version_id || 'v1.0'} (${cert.data_tier || 'Tier 2'})</li>
-          </ul>
-        </div>`;
+    async function syncShipments() {
+      const res = await fetch('/shipments/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([{
+          shipment_uuid: "SHIP-FIELD-" + Math.floor(1000 + Math.random() * 9000),
+          generator_id: "gen_1",
+          facility_id: "fac_2",
+          declared_weight_tons: 3.5
+        }])
+      });
+      const data = await res.json();
+      const box = document.getElementById('syncLog');
+      box.style.display = 'block';
+      box.innerText = JSON.stringify(data, null, 2);
+    }
+
+    async function settleRevenue() {
+      const res = await fetch('/revenue/settle/SHIP-9726?tipping_fee_inr=1000.0', { method: 'POST' });
+      const data = await res.json();
+      const box = document.getElementById('revLog');
+      box.style.display = 'block';
+      box.innerText = JSON.stringify(data, null, 2);
+    }
+
+    async function generateCertificate() {
+      const res = await fetch('/carbon/calculate?shipment_uuid=SHIP-9726', { method: 'POST' });
+      const data = await res.json();
+      const box = document.getElementById('certLog');
+      box.style.display = 'block';
+      box.innerText = JSON.stringify(data, null, 2);
     }
   </script>
 </body>
