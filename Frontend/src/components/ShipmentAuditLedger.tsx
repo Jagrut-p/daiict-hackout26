@@ -301,7 +301,7 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
   };
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-8">
       {/* Header & Controls Strip */}
       <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
@@ -463,7 +463,7 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-800/60 text-xs">
+            <tbody className="divide-y divide-[var(--border-color)] text-xs">
               {filteredTransactions.length > 0 ? (
                 filteredTransactions.map((tx) => {
                   const isCopied = copiedId === tx.id;
@@ -472,15 +472,15 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
                     <tr
                       key={tx.id}
                       onClick={() => onSelectShipment && onSelectShipment(tx.id)}
-                      className="hover:bg-slate-800/40 transition-colors cursor-pointer"
+                      className="hover:bg-slate-800/40 even:bg-slate-900/30 transition-colors cursor-pointer"
                     >
                       {/* Column 1: Timestamp */}
-                      <td className="py-3.5 px-4 font-mono text-slate-300 whitespace-nowrap">
+                      <td className="py-4 px-4 font-mono text-slate-300 whitespace-nowrap">
                         {formatTimestamp(tx.timestamp)}
                       </td>
 
                       {/* Column 2: Shipment UUID (truncated with copy button) */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-4 px-4">
                         <div className="flex items-center gap-2">
                           <span
                             className="font-mono text-cyan-400 font-semibold bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-900/60"
@@ -511,7 +511,7 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
                       </td>
 
                       {/* Column 3: Route (Generator -> Facility) */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-4 px-4">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="font-semibold text-slate-200">
                             {tx.generatorName}
@@ -531,12 +531,12 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
                       </td>
 
                       {/* Column 4: Status */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
+                      <td className="py-4 px-4 whitespace-nowrap">
                         {renderStatusBadge(tx.status)}
                       </td>
 
                       {/* Column 5: Net Carbon Impact */}
-                      <td className="py-3.5 px-4 text-right font-mono whitespace-nowrap">
+                      <td className="py-4 px-4 text-right font-mono whitespace-nowrap">
                         <span
                           className={`font-bold ${
                             tx.netCarbonImpact > 0
@@ -549,7 +549,7 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
                       </td>
 
                       {/* Column 6: MRV Proof Action */}
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                      <td className="py-4 px-4 text-center whitespace-nowrap">
                         <button
                           type="button"
                           onClick={(e) => handleViewCertificate(tx.id, e)}
@@ -608,7 +608,7 @@ export const ShipmentAuditLedger: React.FC<ShipmentAuditLedgerProps> = ({
 
         {/* Ledger Footer Summary */}
         {filteredTransactions.length > 0 && (
-          <div className="p-3.5 bg-slate-950/60 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+          <div className="p-4 sm:p-5 bg-slate-950/60 border-t border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-400">
             <div className="flex items-center gap-3">
               <span>Showing {filteredTransactions.length} transactions</span>
               <span>•</span>

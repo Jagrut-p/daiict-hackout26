@@ -287,9 +287,9 @@ export const GisRouteViewer: React.FC = () => {
       : SAMPLE_ROUTES;
 
   return (
-    <div className="gis-viewer-container space-y-6">
+    <div className="gis-viewer-container space-y-8">
       {/* Test Case Quick Bar */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 shadow-xl backdrop-blur-xl">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-xl">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
@@ -354,7 +354,7 @@ export const GisRouteViewer: React.FC = () => {
         </div>
 
         {/* Real-Time Carbon-Aware Matcher Bar */}
-        <div className="mt-3 pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        <div className="mt-5 pt-5 border-t border-slate-800 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-slate-300 font-semibold flex items-center gap-1">
               <Navigation size={13} className="text-cyan-400" />
@@ -404,8 +404,8 @@ export const GisRouteViewer: React.FC = () => {
       />
 
       {/* Interactive Verification Checklist Box */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
-        <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-xs">
+        <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm">
           <div className="font-semibold text-emerald-500 dark:text-emerald-400 flex items-center gap-1.5 mb-1">
             <CheckCircle2 size={14} /> Live Backend Integration
           </div>
@@ -414,7 +414,7 @@ export const GisRouteViewer: React.FC = () => {
           </p>
         </div>
 
-        <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm">
+        <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm">
           <div className="font-semibold text-emerald-500 dark:text-emerald-400 flex items-center gap-1.5 mb-1">
             <CheckCircle2 size={14} /> Generator Markers
           </div>
@@ -423,7 +423,7 @@ export const GisRouteViewer: React.FC = () => {
           </p>
         </div>
 
-        <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm">
+        <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm">
           <div className="font-semibold text-blue-500 dark:text-blue-400 flex items-center gap-1.5 mb-1">
             <CheckCircle2 size={14} /> Facility Specifications
           </div>
@@ -432,7 +432,7 @@ export const GisRouteViewer: React.FC = () => {
           </p>
         </div>
 
-        <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm">
+        <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm">
           <div className="font-semibold text-cyan-500 dark:text-cyan-400 flex items-center gap-1.5 mb-1">
             <CheckCircle2 size={14} /> Carbon-Aware Polyline
           </div>

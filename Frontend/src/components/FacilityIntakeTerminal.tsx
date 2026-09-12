@@ -338,7 +338,7 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
   return (
     <div className="w-full mx-auto space-y-8">
       {/* Top Header & Fast Action Presets */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-7 shadow-xl backdrop-blur-xl">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-400/25 flex items-center justify-center text-indigo-400 shadow-md">
@@ -384,7 +384,7 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-7 lg:gap-8">
         {/* Left Column: Search & Scale Input Form */}
         <div className="xl:col-span-6 space-y-7 min-w-0">
-          <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-7 shadow-xl backdrop-blur-xl space-y-6">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-xl space-y-6">
             <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2.5 pb-4 border-b border-[var(--border-color)]">
               <Search size={18} className="text-indigo-400" />
               1. Inbound Manifest Lookup
@@ -483,7 +483,7 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
           {/* Scale Input Section */}
           <form
             onSubmit={handleVerifyAndFinalize}
-            className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-7 shadow-xl backdrop-blur-xl space-y-6"
+            className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-xl space-y-6"
           >
             <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2.5 pb-4 border-b border-[var(--border-color)]">
               <Scale size={18} className="text-emerald-400" />
@@ -711,7 +711,7 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
 
           {/* Shipment Manifest Card */}
           {activeShipment ? (
-            <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-7 shadow-xl backdrop-blur-xl space-y-6">
+            <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-xl space-y-6">
               <div className="flex items-start justify-between gap-4 pb-5 border-b border-[var(--border-color)]">
                 <div className="space-y-1">
                   <span className="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)]">
@@ -738,7 +738,7 @@ export const FacilityIntakeTerminal: React.FC<FacilityIntakeTerminalProps> = ({
               </div>
 
               {/* Three Required Displays: Expected Weight, Declared Waste Type, Generator Name */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {/* Expected Weight Card */}
                 <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between space-y-3">
                   <span className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
