@@ -1,3 +1,4 @@
+# REFERENCE ONLY: This script is NOT currently wired into the app and requires an external PostgreSQL/PostGIS setup that does not exist in this in-memory hackathon build.
 import psycopg2
 
 CONN_STR = "postgresql://postgres:postgres@localhost:5432/waste_carbon_db"

@@ -112,8 +112,9 @@ FRONTEND SETUP (Run from Frontend/ directory):
 --------------------------------------------------------------------------------
 1. Client-Generated UUIDs: Idempotent keys prevent duplicate submissions 
    during network retries.
-2. Database-Level Constraints: A unique shipment ID can be linked to at 
-   most one finalized processing batch.
+2. Idempotent In-Memory Registry: A unique shipment ID (UUID) is enforced as 
+   an immutable key in the SHIPMENTS dictionary, preventing duplicate processing 
+   or multi-batch double-claiming.
 3. Weight Discrepancy Auditing: Automatic flagging occurs if destination 
    intake weights deviate from collection origin logs.
 4. Version-Locked Certificates: Generated certificates link directly to fixed 
