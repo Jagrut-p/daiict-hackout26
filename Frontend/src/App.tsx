@@ -9,6 +9,9 @@ import { CarbonSimulator } from './components/CarbonSimulator';
 import { FacilityIntakeTerminal } from './components/FacilityIntakeTerminal';
 import { ShipmentAuditLedger } from './components/ShipmentAuditLedger';
 import { MunicipalityESGDashboard } from './components/MunicipalityESGDashboard';
+import { SyncNotificationCenter } from './components/SyncNotificationCenter';
+import { NetworkSimulator } from './components/NetworkSimulator';
+import { TestSuiteRunner } from './components/TestSuiteRunner';
 import {
   ArrowDown,
   Leaf,
@@ -252,6 +255,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#07090e] text-slate-100 selection:bg-indigo-500/30 selection:text-indigo-200">
+      <SyncNotificationCenter />
       {/* Apple & Samsung Cinematic Hero Section */}
       <HeroSection onExplore={handleExplore} />
 
@@ -289,14 +293,18 @@ export const App: React.FC = () => {
           )}
 
           {activeTab === 'form' && (
-            <RevealSection className="workspace-split">
-              <div className="form-column">
-                <WasteCollectionForm />
+            <RevealSection className="space-y-6">
+              <NetworkSimulator />
+              <div className="workspace-split">
+                <div className="form-column">
+                  <WasteCollectionForm />
+                </div>
+                <div className="sidebar-column">
+                  <QueueViewer />
+                  <ShipmentAuditLog />
+                </div>
               </div>
-              <div className="sidebar-column">
-                <QueueViewer />
-                <ShipmentAuditLog />
-              </div>
+              <TestSuiteRunner />
             </RevealSection>
           )}
         </AppLayout>
