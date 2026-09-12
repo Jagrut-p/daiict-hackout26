@@ -25,6 +25,7 @@ export interface WasteShipment {
   createdAt: string;
   status: ShipmentStatus;
   syncAttemptCount: number;
+  facilityId?: string;
   lastAttemptAt?: string;
   errorDetail?: string;
   statusCode?: number;

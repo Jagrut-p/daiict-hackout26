@@ -146,6 +146,50 @@ export const GisRouteViewer: React.FC = () => {
   const [selectedGeneratorId, setSelectedGeneratorId] = useState<string>('GEN-GJ-01');
   const [matchResult, setMatchResult] = useState<FacilityMatchResponse | null>(null);
   const [isMatching, setIsMatching] = useState<boolean>(false);
+  const [cvrpRoute, setCvrpRoute] = useState<WasteRouteDetail | null>(null);
+  const [isOptimizingCvrp, setIsOptimizingCvrp] = useState<boolean>(false);
+
+  const handleRunCvrpOptimization = async () => {
+    setIsOptimizingCvrp(true);
+    try {
+      const genIds = liveGenerators.slice(0, 3).map((g) => g.id);
+      const facId = liveFacilities[0]?.id || 'FAC-BIOGAS-02';
+      const res = await apiService.optimizeRoute({
+        generator_ids: genIds,
+        facility_id: facId,
+        vehicle_capacity_tons: 10.0,
+      });
+
+      if (res && res.ordered_route) {
+        const coords: [number, number][] = [];
+        if (res.depot) {
+          coords.push([res.depot.lat, res.depot.lng]);
+        }
+        res.ordered_route.forEach((s) => {
+          if (s.lat !== undefined && s.lng !== undefined) {
+            coords.push([s.lat, s.lng]);
+          }
+        });
+        if (res.facility) {
+          coords.push([res.facility.lat, res.facility.lng]);
+        }
+
+        setCvrpRoute({
+          id: 'ROUTE-CVRP-LIVE',
+          name: `OR-Tools CVRP Optimized: ${res.ordered_route.length} stops (${res.total_distance_km} km)`,
+          color: '#06b6d4',
+          totalDistanceKm: res.total_distance_km,
+          estimatedEmissionsKgCO2e: Math.round(res.total_transport_emissions_tCO2e * 1000),
+          coordinates: coords.length > 0 ? coords : SAMPLE_ROUTES[0].coordinates,
+        });
+        setActiveScenario('multistop');
+      }
+    } catch {
+      setActiveScenario('multistop');
+    } finally {
+      setIsOptimizingCvrp(false);
+    }
+  };
 
   // Load generators and facilities from backend on mount
   useEffect(() => {
@@ -282,7 +326,7 @@ export const GisRouteViewer: React.FC = () => {
       : activeScenario === 'backend_match'
       ? backendOptimalRoute
       : activeScenario === 'multistop'
-      ? [SAMPLE_ROUTES[0]]
+      ? [cvrpRoute || SAMPLE_ROUTES[0]]
       : SAMPLE_ROUTES;
 
   return (
@@ -320,16 +364,17 @@ export const GisRouteViewer: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => setActiveScenario('multistop')}
+              onClick={handleRunCvrpOptimization}
+              disabled={isOptimizingCvrp}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
                 activeScenario === 'multistop'
                   ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
                   : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
               }`}
-              title="Test Case 4: Multi-Stop Polyline"
+              title="Optimize multi-stop route via Google OR-Tools CVRP solver"
             >
-              <RouteIcon size={13} />
-              <span>Multi-Stop Route</span>
+              <RouteIcon size={13} className={isOptimizingCvrp ? 'animate-spin' : ''} />
+              <span>{isOptimizingCvrp ? 'Optimizing CVRP...' : 'OR-Tools Multi-Stop'}</span>
             </button>
 
             <button
