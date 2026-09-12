@@ -1,11 +1,12 @@
 # ==============================================================================
 # CONTRIBUTING & ARCHITECTURE NOTE:
-# In-memory data store — do not reintroduce a database dependency without
-# also shipping a schema/migration and updating this comment.
+# In-memory data store by design for this hackathon — do not reintroduce a
+# database dependency without also adding a schema/migration and updating this comment.
 # ==============================================================================
 
 import os
 import math
+import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
@@ -15,6 +16,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+logger = logging.getLogger("uvicorn.error")
+
 # Google OR-Tools CVRP Route Optimization Engine
 try:
     from optimizer import solve_cvrp_route
@@ -22,6 +25,7 @@ try:
 except ImportError:
     solve_cvrp_route = None
     ORTOOLS_AVAILABLE = False
+    logger.warning("WARNING: Google OR-Tools is not installed. /routes/optimize will return 503 until 'ortools' is installed.")
 
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     R = 6371.0
