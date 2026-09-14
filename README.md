@@ -1,6 +1,4 @@
-================================================================================
 WASTE-TO-CARBON VALUE CHAIN TRACKER
-================================================================================
 
 Core Thesis: Carbon-aware waste routing beats distance-first routing. By 
 evaluating processing emissions and transport burn prior to dispatch, our 
